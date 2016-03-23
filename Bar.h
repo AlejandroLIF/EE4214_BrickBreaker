@@ -6,6 +6,7 @@
 
 #define JUMP_SPEED  25  //This is the rate of positional change in terms of pixels per jump
 #define MOVE_SPEED  200 //TODO: adjust this metric to pixels per second, depending on the desired framerate
+#define  BAR_SIZE    8;
 
 struct Bar_s{
     int x; /*horizontal anchor*/
