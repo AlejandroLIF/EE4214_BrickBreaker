@@ -1,6 +1,7 @@
 #define BRICK_WIDTH     40
 #define BRICK_HEIGHT    15
 #define BRICK_SPACING   5
+#define BRICK_SIZE      12;
 
 struct Brick_s{
     const int x; /*horizontal anchor*/
