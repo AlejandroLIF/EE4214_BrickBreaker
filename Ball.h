@@ -1,8 +1,9 @@
 #include <stdio.h>
 
-#define FILL 0xFFFFFFFF
-#define NONE 0X00000000
-#define DIAMETER 15
+#define FILL        0xFFFFFFFF
+#define NONE        0X00000000
+#define DIAMETER    15
+#define BALL_SIZE   20
 
 struct Ball_s{
     	int x; /*horizontal anchor*/
