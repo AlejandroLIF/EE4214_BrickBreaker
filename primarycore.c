@@ -1,5 +1,30 @@
 #include "primarycore.h"
 
+XGpio gpPB; //PB device instance.
+
+static void gpPBIntHandler(void *arg)
+{
+	//clear the interrupt flag. if this is not done, gpio will keep interrupting the microblaze.--
+	// --Possible to use (XGpio*)arg instead of &gpPB
+	XGpio_InterruptClear(&gpPB,1);
+	//Read the state of the push buttons.
+	buttonInput = XGpio_DiscreteRead(&gpPB, 1);
+    //TODO: configure bar movement codes for "jump"
+    switch(buttonInput){
+        case BUTTON_LEFT:
+            barMovementCode = BAR_MOVE_LEFT;
+            break;
+        case BUTTON_RIGHT:
+            barMovementCode = BAR_MOVE_RIGHT;
+            break;
+        default: //No movement if more than one button is pressed at a time.
+            barMovementCode = BAR_NO_MOVEMENT;
+    }
+    if(buttonInput & BUTTON_CENTER){
+        paused = !paused;
+    }
+}
+
 //Firmware entry point
 int main(void){
     	xilkernel_init();
@@ -11,6 +36,7 @@ int main(void){
 
 //Xilkernel entry point
 int main_prog(void){
+    int status;
     /*BEGIN MAILBOX INITIALIZATION*/
 	XMbox_Config *ConfigPtr;
 	ConfigPtr = XMbox_LookupConfig(MBOX_DEVICE_ID);
@@ -19,136 +45,175 @@ int main_prog(void){
 		return XST_FAILURE;
 	}
 
-	int status;
 	status = XMbox_CfgInitialize(&mailbox, ConfigPtr, ConfigPtr->BaseAddress);
 	if (status != XST_SUCCESS) {
 		print("Error initializing mailbox uB1 Receiver--\r\n");
 		return XST_FAILURE;
 	}
+    /*END MAILBOX INITIALIZATION*/
 
-    //TODO: config TFT controller
+    /*BEGIN INTERRUPT CONFIGURATION*/
+    // Initialise the PB instance
+	status = XGpio_Initialize(&gpPB, XPAR_GPIO_0_DEVICE_ID);
+	if (status == XST_DEVICE_NOT_FOUND) {
+		xil_printf("ERROR initializing XGpio: Device not found");
+	}
+	// set PB gpio direction to input.
+	XGpio_SetDataDirection(&gpPB, 1, 0x000000FF);
+	//global enable
+	XGpio_InterruptGlobalEnable(&gpPB);
+	// interrupt enable. both global enable and this function should be called to enable gpio interrupts.
+	XGpio_InterruptEnable(&gpPB,1);
+	//register the handler with xilkernel
+	register_int_handler(XPAR_MICROBLAZE_0_AXI_INTC_AXI_GPIO_0_IP2INTC_IRPT_INTR, gpPBIntHandler, &gpPB);
+	//enable the interrupt in xilkernel
+	enable_interrupt(XPAR_MICROBLAZE_0_AXI_INTC_AXI_GPIO_0_IP2INTC_IRPT_INTR);
+    /*END INTERRUPT CONFIGURATION*/
 
+    /*BEGIN TFT CONTROLLER INITIALIZATION*/
+    status = TftInit(TFT_DEVICE_ID);
+	if ( status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+    /*END TFT CONTROLLER INITIALIZATION*/
+
+    //Initialize thread semaphores
+    if(sem_init(&sem_running, SEM_SHARED, SEM_BLOCKED)){
+        print("Error while initializing semaphore sem_running!\r\n");
+        while(TRUE); //Trap runtime here
+    }
+    if(sem_init(&sem_drawGameArea, SEM_SHARED, SEM_BLOCKED)){
+        print("Error while initializing semaphore sem_drawGameArea!\r\n");
+        while(TRUE); //Trap runtime here
+    }
+    if(sem_init(&sem_brickCollisionListener, SEM_SHARED, SEM_BLOCKED)){
+        print("Error while initializing semaphore sem_brickCollisionListener!\r\n");
+        while(TRUE); //Trap runtime here
+    }
+    if(sem_init(&sem_mailboxListener, SEM_SHARED, SEM_BLOCKED)){
+        print("Error while initializing semaphore sem_mailboxListener!\r\n");
+        while(TRUE); //Trap runtime here
+    }
+    if(sem_init(&sem_drawStatusArea, SEM_SHARED, SEM_BLOCKED)){
+        print("Error while initializing semaphore sem_drawStatusArea!\r\n");
+        while(TRUE); //Trap runtime here
+    }
+
+    /*
+    Thread priority (0 is highest priority):
+        1. thread_mainLoop:
+            • highest priority: preempts all other threads while not blocked (waiting for them to finish)
+        2. thread_mailboxListener
+            • If the mailbox is blocked, the second core also stalls.
+        3. thread_brickCollisionListener
+            • Update appropriate game values if the ball collided with a brick.
+        4. thread_drawGameArea
+            • FIXME: Possible issue: Drawing the game area is time-consuming and will require messagequeue usage. Messagequeue overflow?
+        5. thread_drawStatusArea
+            • Low-priority thread. After it is run, the frame is considered ready to be displayed.
+    */
     pthread_attr_init(&attr);
 	schedpar.sched_priority = PRIO_HIGHEST;
 	pthread_attr_setschedparam(&attr,&schedpar);
     pthread_create(&pthread_mainLoop, &attr, (void*)thread_mainLoop, NULL);
 
-    schedpar.sched_priority--; //Lower the priority of future threads
+    schedpar.sched_priority++;
+    pthread_attr_setschedparam(&attr, &schedpar);
+    pthread_create(&pthread_mailboxListener, &attr, (void*)thread_mailboxListener, NULL);
+
+    schedpar.sched_priority++;
+    pthread_attr_setschedparam(&attr, &schedpar);
+    pthread_create(&pthread_brickCollisionListener, &attr, (void*)thread_brickCollisionListener, NULL);
+
+    schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     pthread_create(&pthread_drawGameArea, &attr, (void*)thread_drawGameArea, NULL);
-    pthread_create(&pthread_brickCollisionListener, &attr, (void*)thread_brickCollisionListener, NULL);
-    pthread_create(&pthread_brickUpdateCompleteListener, &attr, (void*)thread_brickUpdateCompleteListener, NULL);
+
+    schedpar.sched_priority++;
+    pthread_attr_setschedparam(&attr, &schedpar);
     pthread_create(&pthread_drawStatusArea, &attr, (void*)thread_drawStatusArea, NULL);
 }
 
 //Game mainloop thread
 void* thread_mainLoop(void){
-    while(1){
+    while(TRUE){
         //Welcome
-        thread_welcome();
-        while(!(buttonInput & BUTTON_CENTER));
+        welcome();
+        while(!(buttonInput & BUTTON_CENTER));//while(!start)
 
         //Running
-        while(!dead && !win){
+        while(lives && !win){
             //Ready
-            while(!launch){
-                thread_ready();
+            while(!(buttonInput & BUTTON_CENTER)){ //while(!launch)
+                ready();
+                //TODO: sleep
             }
 
             //Running
             while(!win && !loseLife){
                 if(!paused){
-                    thread_running();
+                    running();
                 }
                 else{
                     //Paused
-                    thread_paused();
+                    paused();
                 }
+                //TODO: sleep
             }
 
+            //Lost Life
             if(loseLife){
-                //Lost Life
-                loseLife = 0;
-                thread_loseLife();
+                loseLife = FALSE;
+                lives--;
             }
         }
-        if(dead){
+        if(!lives){
             //Game Over
-            thread_gameOver();
+            gameOver();
         }
         else{
             //Win
-            thread_win();
+            win();
         }
         //Wait for keypress to restart game
-        while(!(buttonInput & BUTTON_CENTER));
-        //FIXME: we need a thread that un-initializes all semaphores and possibly other system variables that are initialized in thread_welcome
+        while(!(buttonInput & BUTTON_CENTER)); //while(!restart)
     }
 }
 
-void* thread_welcome(void){
-    if(sem_init(&sem_running, SEM_SHARED, SEM_BLOCKED)){
-        print("Error while initializing semaphore sem_running!\r\n");
-        while(1); //Trap runtime here
-    }
-    if(sem_init(&sem_drawGameArea, SEM_SHARED, SEM_AVAILABLE)){
-        print("Error while initializing semaphore sem_drawGameArea!\r\n");
-        while(1); //Trap runtime here
-    }
-    if(sem_init(&sem_brickCollisionListener, SEM_SHARED, SEM_BLOCKED)){
-        print("Error while initializing semaphore sem_brickCollisionListener!\r\n");
-        while(1); //Trap runtime here
-    }
-    if(sem_init(&sem_brickUpdateCompleteListener, SEM_SHARED, SEM_BLOCKED)){
-        print("Error while initializing semaphore sem_brickUpdateCompleteListener!\r\n");
-        while(1); //Trap runtime here
-    }
+void* welcome(void){
+    lives = INITIAL_LIVES;
+    bar = Bar_default;
+    queueDraw(MSG_TYPE_BAR, &bar, BAR_SIZE);
+    ball = Ball_default;
+    queueDraw(MSG_TYPE_BALL, &ball, BALL_SIZE);
 
-    int restartMessage[MBOX_DATA_SIZE] = {MBOX_SIGNAL_RESTART, MBOX_SIGNAL_RESTART};
     //Send a message to the secondary core, signaling a restart
     //The secondary core should reply with a draw message for every brick
-    XMbox_SendBlocking(&mailbox, (u32*) restartMessage, MBOX_DATA_SIZE); //FIXME: potential bug in data size found. FIX: send a ball whose fields are all MBOX_SIGNAL_RESTART?
+    MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART;
+    XMbox_SendBlocking(&mailbox, &restartMessage, 1);
 
-    //TODO: reset paddle position
-    bar = Bar_default;
-    //TODO: send message to draw paddle
-    //TODO: reset ball position
-    ball = Ball_default;
-    //TODO: send message to draw ball
+    //Receive brick information and draw everything on screen.
+    sem_post(&sem_drawGameArea);
+    sem_post(&sem_mailboxListener);
+    sem_post(&sem_brickCollisionListener);
+    //Wait for the three branched threads to finish, regardless of the order.
+    sem_wait(&sem_running);
+    sem_wait(&sem_running);
+    sem_wait(&sem_running);
 
-    //TODO: receive draw messages
-    //TODO: draw received messages (including the bricks sent by the secondary core)
-
-    drawStatusArea();
+    //Draw the status area
+    sem_post(&sem_drawStatusArea);
+    //Wait for the drawing operation to complete.
+    sem_wait(&sem_running);
     //TODO: draw welcome text
 }
 
-void* thread_ready(void){
-    switch(barMovementCode){
-        case BAR_NO_MOVEMENT:
-            break; //Do nothing
-        case BAR_MOVE_LEFT:
-            moveLeft(&bar);
-            moveLeft(&ball);
-            break;
-        case BAR_MOVE_RIGHT:
-            moveRight(&bar);
-            moveRight(&ball);
-            break;
-        case BAR_JUMP_LEFT:
-            jumpLeft(&bar);
-            jumpLeft(&ball);
-            break;
-        case BAR_JUMP_RIGHT:
-            jumpRight(&bar);
-            jumpRight(&ball);
-            break;
-        default:
-            while(1);   //THIS SHOULD NEVER HAPPEN
-    }
+void* ready(void){
+    updateBar(&bar, barMovementCode);
+    followBar(&ball, &bar);
+    //FIXME: clear previous bar and ball before redrawing.
     queueDraw(MSG_TYPE_BAR, &bar, BAR_SIZE);
     queueDraw(MSG_TYPE_BALL, &ball, BALL_SIZE);
-    //TODO: sleep(SLEEPCONSTANT);
 }
 
 void queueDraw(const MSG_TYPE msgType, void* data, int size){
@@ -165,30 +230,48 @@ void queueDraw(const MSG_TYPE msgType, void* data, int size){
 	}
 }
 
-void* thread_running(void){
-    updateBar();
-    updateBall();
-    XMbox_SendBlocking(&mailbox, (u32*) &ball, BALL_SIZE);
+void* running(void){
+    updateBar(&bar, barMovementCode);
+    updateBall(&ball);
+    unsigned int message[6];
+    buildBallMessage(&ball, message);
+    //Send the ball position to the secondary core to initialize collision checking
+    XMbox_SendBlocking(&mailbox, (u32*) message, BALL_SIZE + 1);
+
     //Receive brick information and draw everything on screen.
     sem_post(&sem_drawGameArea);
     sem_post(&sem_brickCollisionListener);
-    sem_post(&sem_brickUpdateCompleteListener);
+    sem_post(&sem_mailboxListener);
     //Wait for the three branched threads to finish, regardless of the order.
     sem_wait(&sem_running);
     sem_wait(&sem_running);
     sem_wait(&sem_running);
+
     //Draw the status area
     sem_post(&sem_drawStatusArea);
     //Wait for the drawing operation to complete.
     sem_wait(&sem_running);
 }
 
+void buildBallMessage(Ball* ball, unsigned int message){
+    message[0] = MBOX_MSG_BALL;
+    message[1] = ball->x;
+    message[2] = ball->y;
+    message[3] = ball->d;
+    message[4] = ball->s;
+    message[5] = ball->c;
+}
+
 //Receives messagequeue messages
 void* thread_drawGameArea(void){
-    while(1){
+    int hasDrawn;
+    while(TRUE){
+        hasDrawn = TRUE;
         sem_wait(&sem_drawGameArea);
         //TODO: draw background ("clean" the frame)
-        while(!brickUpdateComplete){ //FIXME: while !brickUpdateComplete or there are still elements waiting to be drawn
+        while(!brickUpdateComplete || hasDrawn){
+            hasDrawn = FALSE;
+            //TODO: if draw, hasDrawn = 1;
             //TODO: check the msgqueue for elements which require drawing and draw them
         }
         sem_post(&sem_running); //Signal the running thread that we're done. FIXME: verify thread to be signaled
@@ -197,9 +280,12 @@ void* thread_drawGameArea(void){
 
 //Receives messagequeue messages
 void* thread_brickCollisionListener(void){
-    while(1){
+    int hasCollided;
+    while(TRUE){
+        hasCollided = FALSE;
         sem_wait(&sem_brickCollisionListener);
-        while(!brickUpdateComplete){ //FIXME: while !brickUpdateComplete or there are still elements waiting to be drawn
+        while(!brickUpdateComplete || hasCollided){
+            //TODO: if collision occurs, hasCollided = 1
             //TODO: check the msgqueue for brick collisions and update ball and score
         }
         sem_post(&sem_running); //Signal the running thread that we're done. FIXME: verify thread to be signaled
@@ -208,21 +294,34 @@ void* thread_brickCollisionListener(void){
 
 
 //Receives mailbox messages from the secondary core
-void* thread_brickUpdateCompleteListener(void){
-    while(1){
-        sem_wait(&sem_brickUpdateCompleteListener);
-        brickUpdateComplete = 0;
+void* thread_mailboxListener(void){
+    Brick brick;
+    MBOX_MSG_TYPE msgType;
+    while(TRUE){
+        sem_wait(&sem_mailboxListener);
+        brickUpdateComplete = FALSE;
         while(!brickUpdateComplete){
-            //TODO: read incoming packages
-            //TODO: if incoming package is brickUpdateComplete, set brickUpdateComplete to 1
+            XMbox_ReadBlocking(&mailbox, (u32*)&msgType, 1);
+            switch(msgType){
+                case MBOX_MSG_DRAW_BRICK:
+                    //TODO
+                    break;
+                case MBOX_MSG_COLLISION:
+                    //TODO
+                    break;
+                case MBOX_MSG_END_COMPUTATION:
+                    brickUpdateComplete = TRUE;
+                    break;
+                case default:
+                    while(TRUE); //This should not happen. Trap runtime!
+            }
         }
         sem_post(&sem_running); //Signal the running thread that we're done. FIXME: verify thread to be signaled
     }
-
 }
 
 void* thread_drawStatusArea(void){
-    while(1){
+    while(TRUE){
         sem_wait(&sem_drawStatusArea);
         //TODO: draw background ("clean" the frame)
         //TODO: draw the status area
