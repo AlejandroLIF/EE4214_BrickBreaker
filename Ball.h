@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include "Bar.h"
 
 #define FILL        0xFFFFFFFF
 #define NONE        0X00000000
@@ -32,18 +32,5 @@ const unsigned int BALL_MASK[][DIAMETER] = {
                                 {NONE,NONE,NONE,NONE,NONE,FILL,FILL,FILL,FILL,FILL,NONE,NONE,NONE,NONE,NONE}
                             };
 
-int main(void){
-    int i, j;
-    for(i = 0; i < DIAMETER; i++){
-        for(j = 0; j < DIAMETER; j++){
-            if(BALL_MASK[i][j]){
-                printf("O");
-            }
-            else{
-                printf(" ");
-            }
-        }
-        printf("\r\n");
-    }
-    return 0;
-}
+void updateBall(Ball* ball);
+void followBar(Ball* ball, Bar* bar);
