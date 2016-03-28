@@ -3,3 +3,5 @@
 #define FLOOR 420
 #define CEIL 60
 
+#define FALSE   0
+#define TRUE    1
