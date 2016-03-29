@@ -146,7 +146,7 @@ void* thread_mainLoop(void){
             //Ready
             while(!(buttonInput & BUTTON_CENTER)){ //while(!launch)
                 ready();
-                //TODO: sleep
+                sleep(40); //FIXME: sleep calibration
             }
 
             //Running
@@ -158,7 +158,7 @@ void* thread_mainLoop(void){
                     //Paused
                     paused();
                 }
-                //TODO: sleep
+                sleep(40); //FIXME: sleep calibration
             }
 
             //Lost Life
