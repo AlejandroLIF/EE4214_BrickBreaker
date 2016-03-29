@@ -3,8 +3,7 @@
 
 #include "xmk.h"
 #include "xstatus.h"
-// #include "xuartlite.h"
-// #include <pthread.h>
+#include <pthread.h>
 #include <errno.h>
 #include <sys/msg.h>
 #include <sys/ipc.h>
@@ -82,8 +81,6 @@ void* thread_brickCollisionListener(void);
 void* thread_mailboxListener(void);
 
 //Running state methods
-void updateBar(void);
-void updateBall(void);
 void queueDraw(const MSG_TYPE msgType, void* data, const MSGQ_MSGSIZE size);
 void welcome(void);
 void ready(void);

@@ -13,7 +13,7 @@ struct Ball_s{
     	int d; /*direction*/
     	int s; /*speed*/
     	int c; /*color*/
-} Ball_default = {0, 0, 0, 50, 0};
+} Ball_default = {0, 0, 0, 10, 0}; //FIXME: set ball default
 typedef struct Ball_s Ball;
 
 const unsigned int BALL_MASK[DIAMETER][DIAMETER] = {
