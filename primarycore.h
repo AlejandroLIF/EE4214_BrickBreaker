@@ -26,10 +26,10 @@
 #define SEM_BLOCKED         0
 
 typedef enum{
-    MSGQ_MSGSIZE_BALL = 3,
-    MSGQ_MSGSIZE_BAR = 2,
-    MSGQ_MSGSIZE_BRICK = 3,
-    MSGQ_MSGSIZE_BRICK_COLLISION = 2
+    MSGQ_MSGSIZE_BALL = 3 * sizeof(int),
+    MSGQ_MSGSIZE_BAR = 2 * sizeof(int),
+    MSGQ_MSGSIZE_BRICK = 3 * sizeof(int),
+    MSGQ_MSGSIZE_BRICK_COLLISION = 2 * sizeof(int)
 } MSGQ_MSGSIZE;
 
 typedef enum{
