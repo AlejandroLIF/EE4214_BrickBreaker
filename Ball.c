@@ -29,7 +29,7 @@ const unsigned int SIN_TABLE [] = {
 	-0.017
 
 
-}
+};
 
 
 // struct Ball_s{
@@ -68,7 +68,7 @@ void updateBallPosition(Ball* ball){
 }
 
 void followBar(Ball* ball, Bar* bar){
-    //TODO
+	
     ball.x = bar.x;
 
 }
