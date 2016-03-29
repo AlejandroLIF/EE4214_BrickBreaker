@@ -173,7 +173,7 @@ void* thread_mainLoop(void){
         }
         else{
             //Win
-            win();
+            gameWin();
         }
         //Wait for keypress to restart game
         while(!(buttonInput & BUTTON_CENTER)); //while(!restart)
@@ -314,7 +314,7 @@ void* thread_brickCollisionListener(void){
         sem_wait(&sem_brickCollisionListener);
         while(!brickUpdateComplete || hasCollided){
             hasCollided = FALSE;
-            while(readFromMessageQueue(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_SIZE_BRICK_COLLISION)){
+            while(readFromMessageQueue(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_MSGSIZE_BRICK_COLLISION)){
                 hasCollided = TRUE;
                 if(increaseScore(dataBuffer[1])){ //FIXME: magic numbers when interpreting the data buffer
                     increaseSpeed(ball);
@@ -345,10 +345,10 @@ void* thread_mailboxListener(void){
                     XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE);
                     updateBallDirection(dataBuffer[0]);  //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
                     break;
-                case MBOX_MSG_END_COMPUTATION:
+                case MBOX_MSG_COMPUTATION_COMPLETE:
                     brickUpdateComplete = TRUE;
                     break;
-                case default:
+                default:
                     while(TRUE); //This should not happen. Trap runtime!
             }
         }
@@ -367,17 +367,18 @@ void* thread_drawStatusArea(void){
 
 //TODO: implement draw, should only draw the object
 //FIXME: For the drawing of the bar, replace else if chain with separate for loops for each section (or other fix)
-void draw(unsigned int* dataBuffer, const MSG_TYPE msgType){
+void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
     int i, j;
+    int x, y, c;
     switch(msgType){
         case MSGQ_TYPE_BRICK:
-            int brick_x = dataBuffer[0];
-            int brick_y = dataBuffer[1];
-            int brick_c = dataBuffer[2];
+            x = dataBuffer[0];
+            y = dataBuffer[1];
+            c = dataBuffer[2];
 
-            for(j = brick_y - BRICK_HEIGHT/2; j < brick_y + BRICK_HEIGHT/2; j++) {
-                for(i = brick_x - BRICK_WIDTH/2; i < brick_x + BRICK_WIDTH/2; i++) {
-                    XTft_SetPixel(&TftInstance, i, j, brick_c);
+            for(j = y - BRICK_HEIGHT/2; j < y + BRICK_HEIGHT/2; j++) {
+                for(i = x - BRICK_WIDTH/2; i < x + BRICK_WIDTH/2; i++) {
+                    XTft_SetPixel(&TftInstance, i, j, c);
                 }
             }
 
@@ -385,21 +386,21 @@ void draw(unsigned int* dataBuffer, const MSG_TYPE msgType){
             break;
 
         case MSGQ_TYPE_BAR:
-            int bar_x = dataBuffer[0];
-            int bar_y = dataBuffer[1];
+            x = dataBuffer[0];
+            y = dataBuffer[1];
 
-            for(j = bar_y - BAR_HEIGHT/2; j < bar_y + BAR_HEIGHT/2; j++) {
+            for(j = y - BAR_HEIGHT/2; j < y + BAR_HEIGHT/2; j++) {
                 for(i = 0; i < BAR_WIDTH; i++) {
                     if(i < A_REGION_WIDTH) {
-                        XTft_SetPixel(&TftInstance, i + bar_x - BAR_WIDTH/2, j, A_REGION_COLOR);
+                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, A_REGION_COLOR);
                     } else if(i < A_REGION_WIDTH + S_REGION_WIDTH) {
-                        XTft_SetPixel(&TftInstance, i + bar_x - BAR_WIDTH/2, j, S_REGION_COLOR);
+                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, S_REGION_COLOR);
                     } else if(i < A_REGION_WIDTH + S_REGION_WIDTH + N_REGION_WIDTH) {
-                        XTft_SetPixel(&TftInstance, i + bar_x - BAR_WIDTH/2, j, N_REGION_COLOR);
+                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, N_REGION_COLOR);
                     } else if(i < A_REGION_WIDTH + 2*S_REGION_WIDTH + N_REGION_WIDTH) {
-                        XTft_SetPixel(&TftInstance, i + bar_x - BAR_WIDTH/2, j, S_REGION_COLOR);
+                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, S_REGION_COLOR);
                     }else{
-                        XTft_SetPixel(&TftInstance, i + bar_x - BAR_WIDTH/2, j, A_REGION_COLOR);
+                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, A_REGION_COLOR);
                     }
                 }
             }
@@ -407,13 +408,13 @@ void draw(unsigned int* dataBuffer, const MSG_TYPE msgType){
             break;
 
         case MSGQ_TYPE_BALL:
-            int ball_x = dataBuffer[0];
-            int ball_y = dataBuffer[1];
+            x = dataBuffer[0];
+            y = dataBuffer[1];
 
             for(j = 0; j < DIAMETER; j++) {
                 for (i = 0; i < DIAMETER; i++) {
                     if(BALL_MASK[j][i] == 0xFFFFFFFF) {
-                        XTft_SetPixel(&TftInstance, ball_x - DIAMETER + i, ball_y - DIAMETER + j, BALL_COLOR);
+                        XTft_SetPixel(&TftInstance, x - DIAMETER + i, y - DIAMETER + j, BALL_COLOR);
                     }
                 }
             }
@@ -429,6 +430,6 @@ void gameOver(void){
 
 //TODO: implement win
 //Win method should display "Win" text and prompt the user to press a key to restart
-void win(void){
+void gameWin(void){
 
 }

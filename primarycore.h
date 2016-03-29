@@ -65,6 +65,7 @@ static pthread_attr_t attr;
 struct sched_param schedpar;
 static sem_t sem_running,
              sem_drawGameArea,
+             sem_drawStatusArea,
              sem_brickCollisionListener,
              sem_mailboxListener;
 
@@ -81,14 +82,14 @@ void* thread_brickCollisionListener(void);
 void* thread_mailboxListener(void);
 
 //Running state methods
-void queueDraw(const MSG_TYPE msgType, void* data, const MSGQ_MSGSIZE size);
+void queueDraw(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size);
 void welcome(void);
 void ready(void);
 void running(void);
 void gameOver(void);
-void win(void);
-int readFromMessageQueue(const MSG_TYPE id, void* dataBuffer, const MSGQ_MSGSIZE size);
-void draw(unsigned int* dataBuffer, const MSG_TYPE msgType);
+void gameWin(void);
+int readFromMessageQueue(const MSGQ_TYPE id, void* dataBuffer, const MSGQ_MSGSIZE size);
+void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType);
 
 //Interrupt handler thread
 static void gpPBIntHandler(void *arg);
