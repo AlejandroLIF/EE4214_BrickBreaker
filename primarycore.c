@@ -263,9 +263,6 @@ void buildBallMessage(Ball* ball, unsigned int* message){
     message[0] = MBOX_MSG_BALL;
     message[1] = ball->x;
     message[2] = ball->y;
-    message[3] = ball->d;
-    message[4] = ball->s;
-    message[5] = ball->c;
 }
 
 //Receives messagequeue messages

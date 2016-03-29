@@ -1,4 +1,4 @@
-#include "collision.h"
+#include "collisions.h"
 
 CollisionCode checkCollideBar(Ball* ball, Bar* bar) {
 

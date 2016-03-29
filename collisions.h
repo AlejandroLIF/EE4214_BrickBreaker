@@ -1,3 +1,10 @@
+#ifndef COLLISIONS_H
+#define COLLISIONS_H
+
+#include "Ball.h"
+#include "Bar.h"
+#include "Brick.h"
+
 typedef enum{
 	COLLIDE_NONE,
     COLLIDE_BAR_AMINUS,
@@ -22,3 +29,6 @@ typedef enum{
 CollisionCode checkCollideBar(Ball* ball, Bar* bar);
 CollisionCode checkCollideWall(Ball* ball);
 CollisionCode checkCollideBrick(Ball* ball, Brick* brick);
+void updateBallDirection(Ball* ball, CollisionCode collision);
+
+#endif

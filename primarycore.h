@@ -18,6 +18,7 @@
 #include "Ball.h"
 #include "Bar.h"
 #include "Brick.h"
+#include "collisions.h"
 
 #define INITIAL_LIVES       3
 #define SLEEPCONSTANT       40

@@ -35,35 +35,4 @@ void followBar(Ball* ball, Bar* bar){
 
 }
 
-void updateBallDirection(Ball* ball, CollisionCode collision) {
-	switch (collision) {
-		case COLLIDE_BAR_AMINUS :
-		break;
-
-		case COLLIDE_BAR_SMINUS :
-		break;
-
-		case COLLIDE_WALL_LEFT :
-			ball->d = (180 - ball->d)%360;
-		break;
-
-		case COLLIDE_WALL_RIGHT :
-			ball->d = (180 - ball->d)%360;
-		break;
-
-		case COLLIDE_WALL_CEIL :
-			ball->d = (180 - ball->d)%360;
-		break;
-
-		case COLLIDE_WALL_FLOOR :
-			ball->d = (180 - ball->d)%360;
-		break;
-
-		default:
-		break;
-
-	}
-
-}
-
 #endif
