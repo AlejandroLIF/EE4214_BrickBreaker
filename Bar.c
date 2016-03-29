@@ -1,44 +1,44 @@
 #include "Bar.h"
 
-void updateBar(Bar* bar, BarMovementCode) {
+void updateBar(Bar* bar, BarMovementCode movementCode) {
 
 	int new_x;
 
-	switch(BarMovementCode) {
+	switch(movementCode) {
 		
 		case BAR_MOVE_LEFT :
-		new_x = bar.x - MOVE_SPEED;
+		new_x = bar->x - MOVE_SPEED;
 		if(new_x < LEFT_WALL + BAR_WIDTH/2) {
-			bar.x = LEFT_WALL + BAR_WIDTH/2;
+			bar->x = LEFT_WALL + BAR_WIDTH/2;
 		} else {
-			bar.x = new_x;
+			bar->x = new_x;
 		}
 		break;
 
 		case BAR_MOVE_RIGHT :
-		new_x = bar.x + MOVE_SPEED;
+		new_x = bar->x + MOVE_SPEED;
 		if(new_x > RIGHT_WALL - BAR_WIDTH/2) {
-			bar.x = RIGHT_WALL - BAR_WIDTH/2;
+			bar->x = RIGHT_WALL - BAR_WIDTH/2;
 		} else {
-			bar.x = new_x;	
+			bar->x = new_x;	
 		}
 		break;
 
 		case BAR_JUMP_LEFT :
-		new_x = bar.x - JUMP_SPEED;
+		new_x = bar->x - JUMP_SPEED;
 		if(new_x < LEFT_WALL + BAR_WIDTH/2) {
-			bar.x = LEFT_WALL + BAR_WIDTH/2;
+			bar->x = LEFT_WALL + BAR_WIDTH/2;
 		} else {
-			bar.x = new_x;
+			bar->x = new_x;
 		}
 		break;
 
 		case BAR_JUMP_RIGHT :
-		new_x = bar.x + JUMP_SPEED;
+		new_x = bar->x + JUMP_SPEED;
 		if(new_x > RIGHT_WALL - BAR_WIDTH/2) {
-			bar.x = RIGHT_WALL - BAR_WIDTH/2;
+			bar->x = RIGHT_WALL - BAR_WIDTH/2;
 		} else {
-			bar.x = new_x;	
+			bar->x = new_x;	
 		}
 		break;
 
@@ -48,8 +48,4 @@ void updateBar(Bar* bar, BarMovementCode) {
 		default :
 		break;
 	}
-}
-
-void collideWithBar(Ball* ball, Bar* bar) {
-	
 }
