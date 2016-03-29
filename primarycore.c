@@ -363,14 +363,58 @@ void* thread_drawStatusArea(void){
     }
 }
 
-//TODO: implement draw
+//TODO: implement draw, should only draw the object
+//FIXME: For the drawing of the bar, replace else if chain with separate for loops for each section (or other fix)
 void draw(unsigned int* dataBuffer, const MSG_TYPE msgType){
+    int i, j;
     switch(msgType){
         case MSGQ_TYPE_BRICK:
+            int brick_x = dataBuffer[0];
+            int brick_y = dataBuffer[1];
+            int brick_c = dataBuffer[2];
+
+            for(j = brick_y - BRICK_HEIGHT/2; j < brick_y + BRICK_HEIGHT/2; j++) {
+                for(i = brick_x - BRICK_WIDTH/2; i < brick_x + BRICK_WIDTH/2; i++) {
+                    XTft_SetPixel(&TftInstance, i, j, brick_c);
+                }
+            }
+
+            
             break;
+            
         case MSGQ_TYPE_BAR:
+            int bar_x = dataBuffer[0];
+            int bar_y = dataBuffer[1];
+
+            for(j = bar_y - BAR_HEIGHT/2; j < bar_y + BAR_HEIGHT/2; j++) {
+                for(i = 0; i < BAR_WIDTH; i++) {
+                    if(i < A_REGION_WIDTH) {
+                        XTft_SetPixel(&TftInstance, i + bar_x - BAR_WIDTH/2, j, A_REGION_COLOR);
+                    } else if(i < A_REGION_WIDTH + S_REGION_WIDTH) {
+                        XTft_SetPixel(&TftInstance, i + bar_x - BAR_WIDTH/2, j, S_REGION_COLOR);
+                    } else if(i < A_REGION_WIDTH + S_REGION_WIDTH + N_REGION_WIDTH) {
+                        XTft_SetPixel(&TftInstance, i + bar_x - BAR_WIDTH/2, j, N_REGION_COLOR);
+                    } else if(i < A_REGION_WIDTH + 2*S_REGION_WIDTH + N_REGION_WIDTH) {
+                        XTft_SetPixel(&TftInstance, i + bar_x - BAR_WIDTH/2, j, S_REGION_COLOR);
+                    }else{
+                        XTft_SetPixel(&TftInstance, i + bar_x - BAR_WIDTH/2, j, A_REGION_COLOR);
+                    }
+                }
+            }
+
             break;
+
         case MSGQ_TYPE_BALL:
+            int ball_x = dataBuffer[0];
+            int ball_y = dataBuffer[1];
+
+            for(j = 0; j < DIAMETER; j++) {
+                for (i = 0; i < DIAMETER; i++) {
+                    if(BALL_MASK[j][i] == 0xFFFFFFFF) {
+                        XTft_SetPixel(&TftInstance, ball_x - DIAMETER + i, ball_y - DIAMETER + j, BALL_COLOR);
+                    }
+                }
+            }
             break;
     }
 }

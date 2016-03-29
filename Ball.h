@@ -4,6 +4,7 @@
 #define NONE        0X00000000
 #define DIAMETER    15
 #define BALL_SIZE   20
+#define BALL_COLOR  0x00151515
 
 struct Ball_s{
     	int x; /*horizontal anchor*/
