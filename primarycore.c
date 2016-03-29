@@ -187,9 +187,9 @@ void welcome(void){
     lives = INITIAL_LIVES;
     bar.x = (LEFT_WALL + RIGHT_WALL)/2;
     //FIXME: hacky fix with the bar.x
-    queueDraw(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
+    queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
     ball = Ball_default;
-    queueDraw(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
+    queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
 
     //Send a message to the secondary core, signaling a restart
     //The secondary core should reply with a draw message for every brick
@@ -218,11 +218,11 @@ void ready(void){
     updateBar(&bar, barMovementCode);
     followBar(&ball, &bar);
     //FIXME: clear previous bar and ball before redrawing.
-    queueDraw(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BALL);
-    queueDraw(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
+    queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BALL);
+    queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
 }
 
-void queueDraw(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
+void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
     int msgid;
     msgid = msgget(msgType, IPC_CREAT);
 
@@ -234,10 +234,6 @@ void queueDraw(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
         xil_printf ("Msgsnd of message(%d) ran into ERROR. Errno: %d. Halting..\r\n", msgType, errno);
         pthread_exit(&errno);
     }
-}
-
-void queueCollision(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
-    
 }
 
 void running(void){
@@ -344,12 +340,11 @@ void* thread_mailboxListener(void){
             switch(msgType){
                 case MBOX_MSG_DRAW_BRICK:
                     XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE);
-                    queueDraw(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK);
+                    queueMsg(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK);
                     break;
                 case MBOX_MSG_COLLISION:
                     XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE);
-                    send()
-                    updateBallDirection(&ball, dataBuffer[0]);  //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
+                    queueMsg(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_MSGSIZE_BRICK_COLLISION);
                     break;
                 case MBOX_MSG_COMPUTATION_COMPLETE:
                     brickUpdateComplete = TRUE;

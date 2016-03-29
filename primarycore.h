@@ -72,7 +72,7 @@ static sem_t sem_running,
              sem_mailboxListener;
 
  //Running state methods
- void queueDraw(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size);
+ void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size);
  void welcome(void);
  void ready(void);
  void running(void);

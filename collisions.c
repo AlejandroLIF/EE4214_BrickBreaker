@@ -32,7 +32,7 @@ CollisionCode checkCollideBar(Ball* ball, Bar* bar) {
 		} else {
 			return COLLIDE_BAR_N;
 		}
-		
+
 	} else {
 		if(ball->x > bar->x + N_REGION_WIDTH/2) {
 			if(ball->x > bar->x + N_REGION_WIDTH/2 + S_REGION_WIDTH) {
@@ -62,13 +62,14 @@ CollisionCode checkCollideWall(Ball* ball) {
 	if(ball->y >= FLOOR + DIAMETER/2) {
 		return COLLIDE_WALL_FLOOR;
 	}
+	return COLLIDE_NONE;
 }
 
 
 /*     UL         UC          UR
      _______|___________|__________
      __CL___|___BRICK___|_____CR___
-            |           |       
+            |           |
        BL         BC          BR
 */
 
@@ -110,7 +111,7 @@ CollisionCode checkCollideBrick(Ball* ball, Brick* brick) {
 				} else {
 					//Within brick height
 					//Possible collisions: CL
-					return COLLIDE_BRICK_CL
+					return COLLIDE_BRICK_CL;
 				}
 			} else {
 				//Within brick width
@@ -195,5 +196,3 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 	}
 
 }
-
-
