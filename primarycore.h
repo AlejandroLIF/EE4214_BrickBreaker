@@ -27,15 +27,17 @@
 #define SEM_BLOCKED         0
 
 typedef enum{
-    MSGQ_ID_BALL,
-    MSGQ_ID_BAR,
-    MSGQ_ID_BRICK
-} MSGQ_ID;
+    MSGQ_MSGSIZE_BALL = 3,
+    MSGQ_MSGSIZE_BAR = 2,
+    MSGQ_MSGSIZE_BRICK = 3,
+    MSGQ_MSGSIZE_BRICK_COLLISION = 2
+} MSGQ_MSGSIZE;
 
 typedef enum{
     MSGQ_TYPE_BALL,
     MSGQ_TYPE_BAR,
-    MSGQ_TYPE_BRICK
+    MSGQ_TYPE_BRICK,
+    MSGQ_TYPE_BRICK_COLLISION
 } MSGQ_TYPE;
 
 static volatile int buttonInput,
@@ -49,6 +51,7 @@ static volatile int buttonInput,
 static Bar bar;
 static Ball ball;
 static unsigned int lives;
+static unsigned int score;
 
 static XTft TftInstance;
 
@@ -71,7 +74,6 @@ int main(void);
 //Xilkernel entry point
 int main_prog(void);
 
-
 //Game state threads
 void* thread_mainLoop(void);
 void* thread_drawGameArea(void);
@@ -82,14 +84,15 @@ void* thread_mailboxListener(void);
 //Running state methods
 void updateBar(void);
 void updateBall(void);
-void queueDraw(const MSG_TYPE msgType, void* data, int size);
+void queueDraw(const MSG_TYPE msgType, void* data, const MSGQ_MSGSIZE size);
 void welcome(void);
 void ready(void);
 void running(void);
 void gameOver(void);
 void win(void);
+int readFromMessageQueue(const MSG_TYPE id, void* dataBuffer, const MSGQ_MSGSIZE size);
+void draw(unsigned int* dataBuffer, const MSG_TYPE msgType);
 
 //Interrupt handler thread
 static void gpPBIntHandler(void *arg);
-
 #endif

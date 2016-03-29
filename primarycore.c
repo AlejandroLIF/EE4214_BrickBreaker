@@ -4,21 +4,21 @@ XGpio gpPB; //PB device instance.
 
 static void gpPBIntHandler(void *arg)
 {
-	//clear the interrupt flag. if this is not done, gpio will keep interrupting the microblaze.--
-	// --Possible to use (XGpio*)arg instead of &gpPB
-	XGpio_InterruptClear(&gpPB,1);
-	//Read the state of the push buttons.
-	buttonInput = XGpio_DiscreteRead(&gpPB, 1);
+    //clear the interrupt flag. if this is not done, gpio will keep interrupting the microblaze.--
+    // --Possible to use (XGpio*)arg instead of &gpPB
+    XGpio_InterruptClear(&gpPB,1);
+    //Read the state of the push buttons.
+    buttonInput = XGpio_DiscreteRead(&gpPB, 1);
     //TODO: configure bar movement codes for "jump"
     switch(buttonInput){
         case BUTTON_LEFT:
-            barMovementCode = BAR_MOVE_LEFT;
-            break;
+        barMovementCode = BAR_MOVE_LEFT;
+        break;
         case BUTTON_RIGHT:
-            barMovementCode = BAR_MOVE_RIGHT;
-            break;
+        barMovementCode = BAR_MOVE_RIGHT;
+        break;
         default: //No movement if more than one button is pressed at a time.
-            barMovementCode = BAR_NO_MOVEMENT;
+        barMovementCode = BAR_NO_MOVEMENT;
     }
     if(buttonInput & BUTTON_CENTER){
         paused = !paused;
@@ -27,54 +27,54 @@ static void gpPBIntHandler(void *arg)
 
 //Firmware entry point
 int main(void){
-    	xilkernel_init();
-    	xmk_add_static_thread(main_prog,0);
-    	xilkernel_start();
-    	xilkernel_main ();
-    	return 0;
+    xilkernel_init();
+    xmk_add_static_thread(main_prog,0);
+    xilkernel_start();
+    xilkernel_main ();
+    return 0;
 }
 
 //Xilkernel entry point
 int main_prog(void){
     int status;
     /*BEGIN MAILBOX INITIALIZATION*/
-	XMbox_Config *ConfigPtr;
-	ConfigPtr = XMbox_LookupConfig(MBOX_DEVICE_ID);
-	if(ConfigPtr == (XMbox_Config *)NULL){
-		print("Error configuring mailbox uB1 Receiver\r\n");
-		return XST_FAILURE;
-	}
+    XMbox_Config *ConfigPtr;
+    ConfigPtr = XMbox_LookupConfig(MBOX_DEVICE_ID);
+    if(ConfigPtr == (XMbox_Config *)NULL){
+        print("Error configuring mailbox uB1 Receiver\r\n");
+        return XST_FAILURE;
+    }
 
-	status = XMbox_CfgInitialize(&mailbox, ConfigPtr, ConfigPtr->BaseAddress);
-	if (status != XST_SUCCESS) {
-		print("Error initializing mailbox uB1 Receiver--\r\n");
-		return XST_FAILURE;
-	}
+    status = XMbox_CfgInitialize(&mailbox, ConfigPtr, ConfigPtr->BaseAddress);
+    if (status != XST_SUCCESS) {
+        print("Error initializing mailbox uB1 Receiver--\r\n");
+        return XST_FAILURE;
+    }
     /*END MAILBOX INITIALIZATION*/
 
     /*BEGIN INTERRUPT CONFIGURATION*/
     // Initialise the PB instance
-	status = XGpio_Initialize(&gpPB, XPAR_GPIO_0_DEVICE_ID);
-	if (status == XST_DEVICE_NOT_FOUND) {
-		xil_printf("ERROR initializing XGpio: Device not found");
-	}
-	// set PB gpio direction to input.
-	XGpio_SetDataDirection(&gpPB, 1, 0x000000FF);
-	//global enable
-	XGpio_InterruptGlobalEnable(&gpPB);
-	// interrupt enable. both global enable and this function should be called to enable gpio interrupts.
-	XGpio_InterruptEnable(&gpPB,1);
-	//register the handler with xilkernel
-	register_int_handler(XPAR_MICROBLAZE_0_AXI_INTC_AXI_GPIO_0_IP2INTC_IRPT_INTR, gpPBIntHandler, &gpPB);
-	//enable the interrupt in xilkernel
-	enable_interrupt(XPAR_MICROBLAZE_0_AXI_INTC_AXI_GPIO_0_IP2INTC_IRPT_INTR);
+    status = XGpio_Initialize(&gpPB, XPAR_GPIO_0_DEVICE_ID);
+    if (status == XST_DEVICE_NOT_FOUND) {
+        xil_printf("ERROR initializing XGpio: Device not found");
+    }
+    // set PB gpio direction to input.
+    XGpio_SetDataDirection(&gpPB, 1, 0x000000FF);
+    //global enable
+    XGpio_InterruptGlobalEnable(&gpPB);
+    // interrupt enable. both global enable and this function should be called to enable gpio interrupts.
+    XGpio_InterruptEnable(&gpPB, 1);
+    //register the handler with xilkernel
+    register_int_handler(XPAR_MICROBLAZE_0_AXI_INTC_AXI_GPIO_0_IP2INTC_IRPT_INTR, gpPBIntHandler, &gpPB);
+    //enable the interrupt in xilkernel
+    enable_interrupt(XPAR_MICROBLAZE_0_AXI_INTC_AXI_GPIO_0_IP2INTC_IRPT_INTR);
     /*END INTERRUPT CONFIGURATION*/
 
     /*BEGIN TFT CONTROLLER INITIALIZATION*/
     status = TftInit(TFT_DEVICE_ID);
-	if ( status != XST_SUCCESS) {
-		return XST_FAILURE;
-	}
+    if ( status != XST_SUCCESS) {
+        return XST_FAILURE;
+    }
     /*END TFT CONTROLLER INITIALIZATION*/
 
     //Initialize thread semaphores
@@ -101,20 +101,20 @@ int main_prog(void){
 
     /*
     Thread priority (0 is highest priority):
-        1. thread_mainLoop:
-            • highest priority: preempts all other threads while not blocked (waiting for them to finish)
-        2. thread_mailboxListener
-            • If the mailbox is blocked, the second core also stalls.
-        3. thread_brickCollisionListener
-            • Update appropriate game values if the ball collided with a brick.
-        4. thread_drawGameArea
-            • FIXME: Possible issue: Drawing the game area is time-consuming and will require messagequeue usage. Messagequeue overflow?
-        5. thread_drawStatusArea
-            • Low-priority thread. After it is run, the frame is considered ready to be displayed.
+    1. thread_mainLoop:
+    • highest priority: preempts all other threads while not blocked (waiting for them to finish)
+    2. thread_mailboxListener
+    • If the mailbox is blocked, the second core also stalls.
+    3. thread_brickCollisionListener
+    • Update appropriate game values if the ball collided with a brick.
+    4. thread_drawGameArea
+    • FIXME: Possible issue: Drawing the game area is time-consuming and will require messagequeue usage. Messagequeue overflow?
+    5. thread_drawStatusArea
+    • Low-priority thread. After it is run, the frame is considered ready to be displayed.
     */
     pthread_attr_init(&attr);
-	schedpar.sched_priority = PRIO_HIGHEST;
-	pthread_attr_setschedparam(&attr,&schedpar);
+    schedpar.sched_priority = PRIO_HIGHEST;
+    pthread_attr_setschedparam(&attr,&schedpar);
     pthread_create(&pthread_mainLoop, &attr, (void*)thread_mainLoop, NULL);
 
     schedpar.sched_priority++;
@@ -183,14 +183,14 @@ void* thread_mainLoop(void){
 void* welcome(void){
     lives = INITIAL_LIVES;
     bar = Bar_default;
-    queueDraw(MSG_TYPE_BAR, &bar, BAR_SIZE);
+    queueDraw(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
     ball = Ball_default;
-    queueDraw(MSG_TYPE_BALL, &ball, BALL_SIZE);
+    queueDraw(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
 
     //Send a message to the secondary core, signaling a restart
     //The secondary core should reply with a draw message for every brick
     MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART;
-    XMbox_SendBlocking(&mailbox, &restartMessage, 1);
+    XMbox_SendBlocking(&mailbox, &restartMessage, MBOX_MSG_ID_SIZE);
 
     //Receive brick information and draw everything on screen.
     sem_post(&sem_drawGameArea);
@@ -212,31 +212,31 @@ void* ready(void){
     updateBar(&bar, barMovementCode);
     followBar(&ball, &bar);
     //FIXME: clear previous bar and ball before redrawing.
-    queueDraw(MSG_TYPE_BAR, &bar, BAR_SIZE);
-    queueDraw(MSG_TYPE_BALL, &ball, BALL_SIZE);
+    queueDraw(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BALL);
+    queueDraw(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
 }
 
-void queueDraw(const MSG_TYPE msgType, void* data, int size){
+void queueDraw(const MSG_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
     int msgid;
     msgid = msgget(msgType, IPC_CREAT);
 
     if( msgid == -1 ) {
-		xil_printf ("Error while queueing draw data. MSG_TYPE:%d\tsize:%d\tErrno: %d\r\n", msgType, size, errno);
-		pthread_exit (&errno);
-	}
-	if(msgsnd(msgid, data, size, 0) < 0 ) { // blocking send
+        xil_printf ("Error while queueing draw data. MSG_TYPE:%d\tsize:%d\tErrno: %d\r\n", msgType, size, errno);
+        pthread_exit (&errno);
+    }
+    if(msgsnd(msgid, data, size, 0) < 0 ) { // blocking send
         xil_printf ("Msgsnd of message(%d) ran into ERROR. Errno: %d. Halting..\r\n", msgType, errno);
-		pthread_exit(&errno);
-	}
+        pthread_exit(&errno);
+    }
 }
 
 void* running(void){
     updateBar(&bar, barMovementCode);
     updateBall(&ball);
-    unsigned int message[6];
+    unsigned int message[MBOX_MSG_ID_SIZE + MBOX_MSG_BALL_SIZE];
     buildBallMessage(&ball, message);
     //Send the ball position to the secondary core to initialize collision checking
-    XMbox_SendBlocking(&mailbox, (u32*) message, BALL_SIZE + 1);
+    XMbox_SendBlocking(&mailbox, (u32*) message, MBOX_MSG_ID_SIZE + MBOX_MSG_BALL_SIZE);
 
     //Receive brick information and draw everything on screen.
     sem_post(&sem_drawGameArea);
@@ -264,50 +264,84 @@ void buildBallMessage(Ball* ball, unsigned int message){
 
 //Receives messagequeue messages
 void* thread_drawGameArea(void){
-    int hasDrawn;
+    int hasDrawn = FALSE;
+    unsigned int dataBuffer[3];
     while(TRUE){
-        hasDrawn = TRUE;
-        sem_wait(&sem_drawGameArea);
+        sem_wait(&sem_drawGameArea); //Wait to be signaled
         //TODO: draw background ("clean" the frame)
         while(!brickUpdateComplete || hasDrawn){
             hasDrawn = FALSE;
-            //TODO: if draw, hasDrawn = 1;
-            //TODO: check the msgqueue for elements which require drawing and draw them
+            while(readFromMessageQueue(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR)){
+                hasDrawn = TRUE;
+                draw(dataBuffer, MSGQ_TYPE_BAR);
+            }
+            while(readFromMessageQueue(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL)){
+                hasDrawn = TRUE;
+                draw(dataBuffer, MSGQ_TYPE_BALL);
+            }
+            while(readFromMessageQueue(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK)){
+                hasDrawn = TRUE;
+                draw(dataBuffer, MSGQ_TYPE_BRICK);
+            }
         }
-        sem_post(&sem_running); //Signal the running thread that we're done. FIXME: verify thread to be signaled
+        sem_post(&sem_running); //Signal the running thread that we're done.
     }
+}
+
+int readFromMessageQueue(const MSG_TYPE id, void* dataBuffer, const MSGQ_MSGSIZE size){
+    int msgid = msgget (id, IPC_CREAT);
+    int msgSize;
+    if( msgid == -1 ) {
+        xil_printf ("receiveMessage -- ERROR while opening Message Queue. Errno: %d \r\n", errno);
+        pthread_exit(&errno) ;
+    }
+    msgSize = msgrcv(msgid, dataBuffer, size, 0, IPC_NOWAIT);
+    if(msgSize != size) { // NON-BLOCKING receive
+        if(errno == EAGAIN){return FALSE;}
+        xil_printf ("receiveMessage of message(%d) ran into ERROR. Errno: %d. Halting...\r\n", id, errno);
+        pthread_exit(&errno);
+    }
+    return TRUE;
 }
 
 //Receives messagequeue messages
 void* thread_brickCollisionListener(void){
-    int hasCollided;
+    int hasCollided = FALSE;
+    unsigned int dataBuffer[3];
     while(TRUE){
-        hasCollided = FALSE;
         sem_wait(&sem_brickCollisionListener);
         while(!brickUpdateComplete || hasCollided){
-            //TODO: if collision occurs, hasCollided = 1
-            //TODO: check the msgqueue for brick collisions and update ball and score
+            hasCollided = FALSE;
+            while(readFromMessageQueue(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_SIZE_BRICK_COLLISION)){
+                hasCollided = TRUE;
+                if(increaseScore(dataBuffer[1])){ //FIXME: magic numbers when interpreting the data buffer
+                    increaseSpeed(ball);
+                }
+                updateBallDirection(dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
+            }
         }
-        sem_post(&sem_running); //Signal the running thread that we're done. FIXME: verify thread to be signaled
+        sem_post(&sem_running); //Signal the running thread that we're done.
     }
 }
-
 
 //Receives mailbox messages from the secondary core
 void* thread_mailboxListener(void){
     Brick brick;
     MBOX_MSG_TYPE msgType;
+    unsigned int dataBuffer[3]; //FIXME: magic numbers when declaring array size
     while(TRUE){
         sem_wait(&sem_mailboxListener);
         brickUpdateComplete = FALSE;
         while(!brickUpdateComplete){
-            XMbox_ReadBlocking(&mailbox, (u32*)&msgType, 1);
+            XMbox_ReadBlocking(&mailbox, (u32*)&msgType, MBOX_MSG_ID_SIZE);
             switch(msgType){
                 case MBOX_MSG_DRAW_BRICK:
-                    //TODO
+                    XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE);
+                    queueDraw(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK);
                     break;
                 case MBOX_MSG_COLLISION:
-                    //TODO
+                    XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE);
+                    updateBallDirection(dataBuffer[0]);  //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
                     break;
                 case MBOX_MSG_END_COMPUTATION:
                     brickUpdateComplete = TRUE;
@@ -316,7 +350,7 @@ void* thread_mailboxListener(void){
                     while(TRUE); //This should not happen. Trap runtime!
             }
         }
-        sem_post(&sem_running); //Signal the running thread that we're done. FIXME: verify thread to be signaled
+        sem_post(&sem_running); //Signal the running thread that we're done.
     }
 }
 
@@ -325,6 +359,30 @@ void* thread_drawStatusArea(void){
         sem_wait(&sem_drawStatusArea);
         //TODO: draw background ("clean" the frame)
         //TODO: draw the status area
-        sem_post(&sem_running); //Signal the running thread that we're done. FIXME: verify thread to be signaled
+        sem_post(&sem_running); //Signal the running thread that we're done.
     }
+}
+
+//TODO: implement draw
+void draw(unsigned int* dataBuffer, const MSG_TYPE msgType){
+    switch(msgType){
+        case MSGQ_TYPE_BRICK:
+            break;
+        case MSGQ_TYPE_BAR:
+            break;
+        case MSGQ_TYPE_BALL:
+            break;
+    }
+}
+
+//TODO: implement gameOver
+//GameOver method should display "Game Over" text and prompt the user to press a key to restart
+void gameOver(void){
+
+}
+
+//TODO: implement win
+//Win method should display "Win" text and prompt the user to press a key to restart
+void win(void){
+
 }
