@@ -3,7 +3,7 @@
 
 #include "Ball.h"
 
-const Ball Ball_default = {0, 0, 0, 10, 0}; //FIXME: set ball default
+// const Ball Ball_default = {0, 0, 0, 10, 0}; //FIXME: set ball default
 
 const unsigned int BALL_MASK[DIAMETER][DIAMETER] = {
                                 {NONE,NONE,NONE,NONE,NONE,FILL,FILL,FILL,FILL,FILL,NONE,NONE,NONE,NONE,NONE},
