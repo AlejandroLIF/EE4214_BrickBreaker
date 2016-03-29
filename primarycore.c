@@ -236,6 +236,10 @@ void queueDraw(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
     }
 }
 
+void queueCollision(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
+    
+}
+
 void running(void){
     updateBar(&bar, barMovementCode);
     updateBall(&ball);
@@ -344,7 +348,8 @@ void* thread_mailboxListener(void){
                     break;
                 case MBOX_MSG_COLLISION:
                     XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE);
-                    updateBallDirection(dataBuffer[0]);  //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
+                    send()
+                    updateBallDirection(&ball, dataBuffer[0]);  //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
                     break;
                 case MBOX_MSG_COMPUTATION_COMPLETE:
                     brickUpdateComplete = TRUE;

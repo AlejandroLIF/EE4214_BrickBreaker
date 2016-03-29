@@ -1,3 +1,6 @@
+#ifndef BRICK_H
+#define BRICK_H
+
 #define BRICK_WIDTH     40
 #define BRICK_HEIGHT    15
 #define BRICK_SPACING   5
@@ -16,3 +19,5 @@ struct Brick_s{
 };
 
 typedef struct Brick_s Brick;
+
+#endif
