@@ -42,10 +42,10 @@ const unsigned int SIN_TABLE [] = {
 // typedef struct Ball_s Ball;
 
 void updateBallPosition(Ball* ball){
-    int speed = ball.s;
-    int dir = ball.d;
-    int old_x = ball.x;
-    int old_y = ball.y;
+    int speed = ball->s;
+    int dir = ball->d;
+    int old_x = ball->x;
+    int old_y = ball->y;
 
     int new_x = speed * SIN_TABLE[ (dir+90) % 360 ] + old_x;
     int new_y = speed * SIN_TABLE[ dir ] + old_y;
@@ -62,13 +62,13 @@ void updateBallPosition(Ball* ball){
     	new_y = FLOOR - DIAMETER/2;
     }
 
-    ball.x = new_x;
-    ball.y = new_y;
+    ball->x = new_x;
+    ball->y = new_y;
 
 }
 
 void followBar(Ball* ball, Bar* bar){
-	
-    ball.x = bar.x;
+
+    ball->x = bar->x;
 
 }
