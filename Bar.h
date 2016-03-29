@@ -1,3 +1,5 @@
+#include "MainScreen.h"
+
 #define BAR_WIDTH       80
 #define BAR_HEIGHT      5
 #define A_REGION_WIDTH  10
@@ -27,4 +29,4 @@ struct Bar_s{
 
 typedef struct Bar_s Bar;
 
-void updateBar(Bar* bar, BarMovementCode);
+void updateBar(Bar* bar, BarMovementCode movementCodes);
