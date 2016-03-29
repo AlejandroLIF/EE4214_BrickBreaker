@@ -20,7 +20,7 @@
 struct Bar_s{
     int x; /*horizontal anchor*/
     const int y; /*vertical anchor*/
-} Bar_default = {0, FLOOR - 10 - 3};
+};
 typedef struct Bar_s Bar;
 
 typedef enum{
@@ -30,6 +30,8 @@ typedef enum{
     BAR_JUMP_LEFT,
     BAR_JUMP_RIGHT
 } BarMovementCode;
+
+extern const Bar Bar_default;
 
 void updateBar(Bar* bar, BarMovementCode movementCodes);
 #endif

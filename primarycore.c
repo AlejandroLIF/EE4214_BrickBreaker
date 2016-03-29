@@ -238,7 +238,7 @@ void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
 
 void running(void){
     updateBar(&bar, barMovementCode);
-    updateBall(&ball);
+    updateBallPosition(&ball);
     unsigned int message[MBOX_MSG_ID_SIZE + MBOX_MSG_BALL_SIZE];
     buildBallMessage(&ball, message);
     //Send the ball position to the secondary core to initialize collision checking

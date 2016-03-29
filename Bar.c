@@ -3,12 +3,14 @@
 
 #include "Bar.h"
 
+const Bar Bar_default = {0, FLOOR - 10 - 3};
+
 void updateBar(Bar* bar, BarMovementCode movementCode) {
 
 	int new_x;
 
 	switch(movementCode) {
-		
+
 		case BAR_MOVE_LEFT :
 		new_x = bar->x - MOVE_SPEED;
 		if(new_x < LEFT_WALL + BAR_WIDTH/2) {
@@ -23,7 +25,7 @@ void updateBar(Bar* bar, BarMovementCode movementCode) {
 		if(new_x > RIGHT_WALL - BAR_WIDTH/2) {
 			bar->x = RIGHT_WALL - BAR_WIDTH/2;
 		} else {
-			bar->x = new_x;	
+			bar->x = new_x;
 		}
 		break;
 
@@ -41,7 +43,7 @@ void updateBar(Bar* bar, BarMovementCode movementCode) {
 		if(new_x > RIGHT_WALL - BAR_WIDTH/2) {
 			bar->x = RIGHT_WALL - BAR_WIDTH/2;
 		} else {
-			bar->x = new_x;	
+			bar->x = new_x;
 		}
 		break;
 
