@@ -177,7 +177,7 @@ void* thread_updateComplete(void){
         for(i = 0; i < COLUMNS; i++){
             sem_wait(&sem_updateComplete);
         }
-        XMbox_WriteBlocking(&mailbox, &computationComplete, MBOX_MSG_ID_SIZE);
+        XMbox_WriteBlocking(&mailbox, (u32*)&computationComplete, MBOX_MSG_ID_SIZE);
         for(i = 0; i < COLUMNS; i++){
             sem_post(&sem_columnWait);
         }
@@ -199,7 +199,7 @@ void columnCode(const int colID){
                     dataBuffer[1] = x;
                     dataBuffer[2] = (int)(CEIL + BRICK_SPACING * (i+1) + BRICK_HEIGHT * (i + 0.5));
                     dataBuffer[3] = goldenColumn[colID] ? BRICK_COLOR_ACTIVE : BRICK_COLOR_DEFAULT;
-                    XMbox_WriteBlocking(&mailbox, dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE + MBOX_MSG_ID_SIZE);
+                    XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE + MBOX_MSG_ID_SIZE);
                 }
             }
         }
