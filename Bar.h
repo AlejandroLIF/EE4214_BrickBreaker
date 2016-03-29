@@ -1,3 +1,6 @@
+#ifndef BAR_H
+#define BAR_H
+
 #include "MainScreen.h"
 
 #define BAR_WIDTH       80
@@ -14,6 +17,12 @@
 #define MOVE_SPEED  200 //TODO: adjust this metric to pixels per second, depending on the desired framerate
 #define BAR_Y		405
 
+struct Bar_s{
+    int x; /*horizontal anchor*/
+    const int y; /*vertical anchor*/
+} Bar_default = {0, FLOOR - 10 - 3};
+typedef struct Bar_s Bar;
+
 typedef enum{
     BAR_NO_MOVEMENT,
     BAR_MOVE_LEFT,
@@ -22,11 +31,5 @@ typedef enum{
     BAR_JUMP_RIGHT
 } BarMovementCode;
 
-struct Bar_s{
-    int x; /*horizontal anchor*/
-    const int y; /*vertical anchor*/
-} Bar_default = {0, FLOOR - 10 - 3};
-
-typedef struct Bar_s Bar;
-
 void updateBar(Bar* bar, BarMovementCode movementCodes);
+#endif
