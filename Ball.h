@@ -1,5 +1,6 @@
 #include "Bar.h"
 #include "MainScreen.h"
+#include "collisions.h"
 
 #define FILL        0xFFFFFFFF
 #define NONE        0X00000000
@@ -64,3 +65,4 @@ static const double SIN_TABLE[360] = {
 
 void updateBall(Ball* ball);
 void followBar(Ball* ball, Bar* bar);
+void updateBallDirection(Ball* ball, CollisionCode collision);
