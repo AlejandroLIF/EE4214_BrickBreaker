@@ -1,6 +1,8 @@
 #include "primarycore.h"
 
 XGpio gpPB; //PB device instance.
+Bar bar;
+Ball ball;
 
 static void gpPBIntHandler(void *arg)
 {
@@ -156,7 +158,6 @@ void* thread_mainLoop(void){
                 }
                 else{
                     //Paused
-                    paused();
                 }
                 sleep(40); //FIXME: sleep calibration
             }
@@ -180,7 +181,7 @@ void* thread_mainLoop(void){
     }
 }
 
-void* welcome(void){
+void welcome(void){
     lives = INITIAL_LIVES;
     bar = Bar_default;
     queueDraw(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
@@ -192,7 +193,7 @@ void* welcome(void){
     MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART;
     int dataBuffer[3] = {MBOX_MSG_BEGIN_COMPUTATION, 0, 0};//FIXME: this is a hacky placeholder
     XMbox_SendBlocking(&mailbox, &restartMessage, MBOX_MSG_ID_SIZE);
-    XMbox_SendBlocking(&mailbox, &restartMessage, MBOX_MSG_ID_SIZE);
+    XMbox_SendBlocking(&mailbox, dataBuffer, 3*sizeof(int));
 
     //Receive brick information and draw everything on screen.
     sem_post(&sem_drawGameArea);
@@ -210,7 +211,7 @@ void* welcome(void){
     //TODO: draw welcome text
 }
 
-void* ready(void){
+void ready(void){
     updateBar(&bar, barMovementCode);
     followBar(&ball, &bar);
     //FIXME: clear previous bar and ball before redrawing.
@@ -232,7 +233,7 @@ void queueDraw(const MSG_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
     }
 }
 
-void* running(void){
+void running(void){
     updateBar(&bar, barMovementCode);
     updateBall(&ball);
     unsigned int message[MBOX_MSG_ID_SIZE + MBOX_MSG_BALL_SIZE];
@@ -255,7 +256,7 @@ void* running(void){
     sem_wait(&sem_running);
 }
 
-void buildBallMessage(Ball* ball, unsigned int message){
+void buildBallMessage(Ball* ball, unsigned int* message){
     message[0] = MBOX_MSG_BALL;
     message[1] = ball->x;
     message[2] = ball->y;
@@ -316,9 +317,9 @@ void* thread_brickCollisionListener(void){
             hasCollided = FALSE;
             while(readFromMessageQueue(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_MSGSIZE_BRICK_COLLISION)){
                 hasCollided = TRUE;
-                if(increaseScore(dataBuffer[1])){ //FIXME: magic numbers when interpreting the data buffer
-                    increaseSpeed(ball);
-                }
+//                if(increaseScore(dataBuffer[1])){ //FIXME: magic numbers when interpreting the data buffer
+//                    increaseSpeed(ball);
+//                }
                 updateBallDirection(dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
             }
         }

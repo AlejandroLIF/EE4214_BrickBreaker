@@ -47,8 +47,8 @@ static volatile int buttonInput,
                     brickUpdateComplete;
 
 //Main game component (Ball and Bar) declarations.
-static Bar bar;
-static Ball ball;
+extern Bar bar;
+extern Ball ball;
 static unsigned int lives;
 static unsigned int score;
 
@@ -69,6 +69,17 @@ static sem_t sem_running,
              sem_brickCollisionListener,
              sem_mailboxListener;
 
+ //Running state methods
+ void queueDraw(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size);
+ void welcome(void);
+ void ready(void);
+ void running(void);
+ void gameOver(void);
+ void gameWin(void);
+ int readFromMessageQueue(const MSGQ_TYPE id, void* dataBuffer, const MSGQ_MSGSIZE size);
+ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType);
+ void buildBallMessage(Ball* ball, unsigned int* message);
+
 //Firmware entry point
 int main(void);
 //Xilkernel entry point
@@ -81,15 +92,6 @@ void* thread_drawStatusArea(void);
 void* thread_brickCollisionListener(void);
 void* thread_mailboxListener(void);
 
-//Running state methods
-void queueDraw(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size);
-void welcome(void);
-void ready(void);
-void running(void);
-void gameOver(void);
-void gameWin(void);
-int readFromMessageQueue(const MSGQ_TYPE id, void* dataBuffer, const MSGQ_MSGSIZE size);
-void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType);
 
 //Interrupt handler thread
 static void gpPBIntHandler(void *arg);
