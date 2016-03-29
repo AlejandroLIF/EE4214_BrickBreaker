@@ -1,3 +1,6 @@
+#ifndef XTFTCONFIG_H
+#define XTFTCONFIG_H
+
 #include "xtft.h"
 #include "xparameters.h"
 
@@ -26,3 +29,7 @@
  */
 #define TFT_FRAME_ADDR        0x10000000
 /************************ END XTFT Constant Definitions **************************/
+
+int TftInit(u32 TftDeviceId, XTft* TftInstance);
+
+#endif

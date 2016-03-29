@@ -31,10 +31,6 @@ int main_prog(void){
         print("Error while initializing semaphore sem_goldenColumns!\r\n");
         while(TRUE); //Trap runtime here
     }
-    if(sem_init(&sem_switchGoldenColumns, SEM_SHARED, SEM_BLOCKED)){
-        print("Error while initializing semaphore sem_switchGoldenColumns!\r\n");
-        while(TRUE); //Trap runtime here
-    }
     if(sem_init(&sem_updateComplete, SEM_SHARED, SEM_BLOCKED)){
         print("Error while initializing semaphore sem_updateComplete!\r\n");
         while(TRUE); //Trap runtime here
@@ -100,6 +96,8 @@ int main_prog(void){
     schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     pthread_create(&pthread_col9, &attr, (void*)thread_col9, NULL);
+
+    return 0;
 }
 
 void* thread_mailboxListener(void){
@@ -114,7 +112,7 @@ void* thread_mailboxListener(void){
                 restart();
                 break;
             case MBOX_MSG_BEGIN_COMPUTATION:
-                XMbox_ReadBlocking(&mailbox, dataBuffer, MBOX_MSG_BALL_SIZE);
+                XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_BALL_SIZE);
                 ball.x = dataBuffer[0];
                 ball.y = dataBuffer[1];
                 for(i = 0; i < COLUMNS; i++){
@@ -131,6 +129,7 @@ void* thread_mailboxListener(void){
 }
 
 void restart(void){
+	int i, j;
     //Reset the activeBricks array
     for(i = 0; i < COLUMNS; i++){
         for(j = 0; j < ROWS; j++){
@@ -191,7 +190,7 @@ void columnCode(const int colID){
     Brick b;
     int dataBuffer[4];
     while(TRUE){
-        sem_wait(&sem_columnStart)
+        sem_wait(&sem_columnStart);
         if(bricksLeft[colID]){
             for(i = 0; i < ROWS; i++){
                 if(activeBricks[colID][i]){
@@ -211,31 +210,41 @@ void columnCode(const int colID){
 
 void* thread_col0(void){
     columnCode(0);
+    return 0;
 }
 void* thread_col1(void){
     columnCode(1);
+    return 0;
 }
 void* thread_col2(void){
     columnCode(2);
+    return 0;
 }
 void* thread_col3(void){
     columnCode(3);
+    return 0;
 }
 void* thread_col4(void){
     columnCode(4);
+    return 0;
 }
 void* thread_col5(void){
     columnCode(5);
+    return 0;
 }
 void* thread_col6(void){
     columnCode(6);
+    return 0;
 }
 void* thread_col7(void){
     columnCode(7);
+    return 0;
 }
 void* thread_col8(void){
     columnCode(8);
+    return 0;
 }
 void* thread_col9(void){
     columnCode(9);
+    return 0;
 }

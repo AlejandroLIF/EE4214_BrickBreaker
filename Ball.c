@@ -1,3 +1,6 @@
+#ifndef BALL_C
+#define BALL_C
+
 #include "Ball.h"
 
 void updateBallPosition(Ball* ball){
@@ -62,3 +65,5 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 	}
 
 }
+
+#endif

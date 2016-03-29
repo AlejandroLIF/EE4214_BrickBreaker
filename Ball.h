@@ -1,3 +1,6 @@
+#ifndef BALL_H
+#define BALL_H
+
 #include "Bar.h"
 #include "MainScreen.h"
 #include "collisions.h"
@@ -66,3 +69,5 @@ static const double SIN_TABLE[360] = {
 void updateBall(Ball* ball);
 void followBar(Ball* ball, Bar* bar);
 void updateBallDirection(Ball* ball, CollisionCode collision);
+
+#endif
