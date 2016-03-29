@@ -73,7 +73,7 @@ int main_prog(void){
     /*END INTERRUPT CONFIGURATION*/
 
     /*BEGIN TFT CONTROLLER INITIALIZATION*/
-    status = TftInit(TFT_DEVICE_ID);
+    status = TftInit(TFT_DEVICE_ID, &TftInstance);
     if ( status != XST_SUCCESS) {
         return XST_FAILURE;
     }
@@ -323,7 +323,7 @@ void* thread_brickCollisionListener(void){
 //                if(increaseScore(dataBuffer[1])){ //FIXME: magic numbers when interpreting the data buffer
 //                    increaseSpeed(ball);
 //                }
-                updateBallDirection(dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
+                updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
             }
         }
         sem_post(&sem_running); //Signal the running thread that we're done.

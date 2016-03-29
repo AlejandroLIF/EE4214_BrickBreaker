@@ -7,6 +7,7 @@
 #include <sys/msg.h>
 #include <sys/ipc.h>
 #include <sys/timer.h>
+#include <stdlib.h>
 
 #include "Brick.h"
 #include "Ball.h"

@@ -1,3 +1,6 @@
+#ifndef BALL_C
+#define BALL_C
+
 #include "Ball.h"
 
 void updateBallPosition(Ball* ball){
@@ -31,3 +34,5 @@ void followBar(Ball* ball, Bar* bar){
     ball->x = bar->x;
 
 }
+
+#endif
