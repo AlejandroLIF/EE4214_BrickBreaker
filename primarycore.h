@@ -8,6 +8,7 @@
 #include <sys/msg.h>
 #include <sys/ipc.h>
 #include <sys/timer.h>
+#include <sys/intr.h>
 #include "semaphore.h"
 
 #include "xtftConfig.h"

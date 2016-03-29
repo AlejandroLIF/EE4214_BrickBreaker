@@ -25,7 +25,7 @@ typedef enum{
 struct Bar_s{
     int x; /*horizontal anchor*/
     const int y; /*vertical anchor*/
-} Bar_default = {0, 0};
+} Bar_default = {0, FLOOR - 10 - 3};
 
 typedef struct Bar_s Bar;
 

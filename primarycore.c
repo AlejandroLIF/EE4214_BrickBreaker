@@ -1,8 +1,8 @@
 #include "primarycore.h"
 
 XGpio gpPB; //PB device instance.
-Bar bar;
-Ball ball;
+Bar bar = Bar_default;
+Ball ball = Ball_default;
 
 static void gpPBIntHandler(void *arg)
 {
@@ -134,6 +134,8 @@ int main_prog(void){
     schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     pthread_create(&pthread_drawStatusArea, &attr, (void*)thread_drawStatusArea, NULL);
+
+    return 0;
 }
 
 //Game mainloop thread
@@ -148,7 +150,7 @@ void* thread_mainLoop(void){
             //Ready
             while(!(buttonInput & BUTTON_CENTER)){ //while(!launch)
                 ready();
-                sleep(40); //FIXME: sleep calibration
+                sleep(SLEEPCONSTANT); //FIXME: sleep calibration
             }
 
             //Running
@@ -159,7 +161,7 @@ void* thread_mainLoop(void){
                 else{
                     //Paused
                 }
-                sleep(40); //FIXME: sleep calibration
+                sleep(SLEEPCONSTANT); //FIXME: sleep calibration
             }
 
             //Lost Life
@@ -183,7 +185,8 @@ void* thread_mainLoop(void){
 
 void welcome(void){
     lives = INITIAL_LIVES;
-    bar = Bar_default;
+    bar.x = (LEFT_WALL + RIGHT_WALL)/2;
+    //FIXME: hacky fix with the bar.x
     queueDraw(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
     ball = Ball_default;
     queueDraw(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
@@ -192,8 +195,8 @@ void welcome(void){
     //The secondary core should reply with a draw message for every brick
     MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART;
     int dataBuffer[3] = {MBOX_MSG_BEGIN_COMPUTATION, 0, 0};//FIXME: this is a hacky placeholder
-    XMbox_SendBlocking(&mailbox, &restartMessage, MBOX_MSG_ID_SIZE);
-    XMbox_SendBlocking(&mailbox, dataBuffer, 3*sizeof(int));
+    XMbox_WriteBlocking(&mailbox, (u32*)&restartMessage, MBOX_MSG_ID_SIZE);
+    XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, 3*sizeof(int));
 
     //Receive brick information and draw everything on screen.
     sem_post(&sem_drawGameArea);
@@ -219,7 +222,7 @@ void ready(void){
     queueDraw(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
 }
 
-void queueDraw(const MSG_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
+void queueDraw(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
     int msgid;
     msgid = msgget(msgType, IPC_CREAT);
 
@@ -239,7 +242,7 @@ void running(void){
     unsigned int message[MBOX_MSG_ID_SIZE + MBOX_MSG_BALL_SIZE];
     buildBallMessage(&ball, message);
     //Send the ball position to the secondary core to initialize collision checking
-    XMbox_SendBlocking(&mailbox, (u32*) message, MBOX_MSG_ID_SIZE + MBOX_MSG_BALL_SIZE);
+    XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_ID_SIZE + MBOX_MSG_BALL_SIZE);
 
     //Receive brick information and draw everything on screen.
     sem_post(&sem_drawGameArea);
@@ -291,7 +294,7 @@ void* thread_drawGameArea(void){
     }
 }
 
-int readFromMessageQueue(const MSG_TYPE id, void* dataBuffer, const MSGQ_MSGSIZE size){
+int readFromMessageQueue(const MSGQ_TYPE id, void* dataBuffer, const MSGQ_MSGSIZE size){
     int msgid = msgget (id, IPC_CREAT);
     int msgSize;
     if( msgid == -1 ) {
@@ -420,6 +423,8 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
                 }
             }
             break;
+        default:
+        	while(TRUE); //Should never happen. Trap runtime here.
     }
 }
 
