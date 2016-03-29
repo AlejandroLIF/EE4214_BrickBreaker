@@ -1,3 +1,6 @@
+#ifndef BAR_C
+#define BAR_C
+
 #include "Bar.h"
 
 void updateBar(Bar* bar, BarMovementCode movementCode) {
@@ -49,3 +52,4 @@ void updateBar(Bar* bar, BarMovementCode movementCode) {
 		break;
 	}
 }
+#endif
