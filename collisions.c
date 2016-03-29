@@ -1,3 +1,4 @@
+#ifndef COLLISIONS_C
 #include "collisions.h"
 
 CollisionCode checkCollideBar(Ball* ball, Bar* bar) {
@@ -196,3 +197,5 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 	}
 
 }
+
+#endif
