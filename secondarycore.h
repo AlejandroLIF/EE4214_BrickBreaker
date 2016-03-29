@@ -1,3 +1,6 @@
+#ifndef SECONDARYCORE_H
+#define SECONDARYCORE_H
+
 #include "xmk.h"
 #include <xparameters.h>
 #include "xmbox.h"
@@ -9,8 +12,8 @@
 #include <sys/timer.h>
 #include <stdlib.h>
 
-#include "Brick.h"
 #include "Ball.h"
+#include "Brick.h"
 #include "MainScreen.h"
 #include "mailboxConfig.h"
 
@@ -75,3 +78,5 @@ void* thread_col6(void);
 void* thread_col7(void);
 void* thread_col8(void);
 void* thread_col9(void);
+
+#endif

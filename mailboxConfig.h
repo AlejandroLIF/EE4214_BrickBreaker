@@ -1,3 +1,5 @@
+#ifndef MAILBOXCONFIG_H
+#define MAILBOXCONFIG_H
 
 #include "xmbox.h"
 
@@ -23,3 +25,5 @@ typedef enum{
 
 //The Mailbox allows communication between the two cores to take place
 static XMbox mailbox;
+
+#endif
