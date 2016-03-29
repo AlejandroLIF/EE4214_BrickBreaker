@@ -3,7 +3,7 @@
 
 #include "Bar.h"
 
-const Bar Bar_default = {0, FLOOR - 10 - 3};
+// const Bar Bar_default = {0, FLOOR - 10 - 3};
 
 void updateBar(Bar* bar, BarMovementCode movementCode) {
 

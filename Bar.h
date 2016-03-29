@@ -31,7 +31,7 @@ typedef enum{
     BAR_JUMP_RIGHT
 } BarMovementCode;
 
-extern const Bar Bar_default;
+// extern const Bar Bar_default;
 
 void updateBar(Bar* bar, BarMovementCode movementCodes);
 #endif

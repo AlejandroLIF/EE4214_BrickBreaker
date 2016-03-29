@@ -19,7 +19,7 @@ struct Ball_s{
 };
 typedef struct Ball_s Ball;
 
-extern const Ball Ball_default;
+// extern const Ball Ball_default;
 extern const unsigned int BALL_MASK[DIAMETER][DIAMETER];
 
 static const double SIN_TABLE[360] = {
