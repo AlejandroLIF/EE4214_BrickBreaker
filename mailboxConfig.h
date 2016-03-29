@@ -13,5 +13,12 @@ typedef enum{
     MBOX_MSG_END_COMPUTATION
 } MBOX_MSG_TYPE;
 
+typedef enum{
+    MBOX_MSG_ID_SIZE = 1,
+    MBOX_MSG_DRAW_BRICK_SIZE = 3,
+    MBOX_MSG_COLLISION_SIZE = 1,
+    MBOX_MSG_BALL_SIZE = 2
+} MBOX_MSG_TYPE_SIZE;
+
 //The Mailbox allows communication between the two cores to take place
 static XMbox mailbox;
