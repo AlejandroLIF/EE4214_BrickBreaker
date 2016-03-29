@@ -2,11 +2,11 @@
 #define BAR_HEIGHT      5
 #define A_REGION_WIDTH  10
 #define S_REGION_WIDTH  10
-#define N_REGION_WIDTH  40
+#define N_REGION_WIDTH  41
 
 #define JUMP_SPEED  25  //This is the rate of positional change in terms of pixels per jump
 #define MOVE_SPEED  200 //TODO: adjust this metric to pixels per second, depending on the desired framerate
-#define  BAR_SIZE    8;
+#define BAR_Y		405
 
 typedef enum{
     BAR_NO_MOVEMENT,
