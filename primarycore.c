@@ -1,8 +1,8 @@
 #include "primarycore.h"
 
 XGpio gpPB; //PB device instance.
-Bar bar = Bar_default;
-Ball ball = Ball_default;
+Bar bar = {0, FLOOR - 10 - 3};
+Ball ball;
 
 static void gpPBIntHandler(void *arg)
 {
