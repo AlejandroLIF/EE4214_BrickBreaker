@@ -3,8 +3,8 @@
 
 #include "xmk.h"
 #include "xstatus.h"
-// #include "xuartlite.h"
-// #include <pthread.h>
+#include "xuartlite.h"
+#include <pthread.h>
 #include <errno.h>
 #include <sys/msg.h>
 #include <sys/ipc.h>

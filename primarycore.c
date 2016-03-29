@@ -190,6 +190,8 @@ void* welcome(void){
     //Send a message to the secondary core, signaling a restart
     //The secondary core should reply with a draw message for every brick
     MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART;
+    int dataBuffer[3] = {MBOX_MSG_BEGIN_COMPUTATION, 0, 0};//FIXME: this is a hacky placeholder
+    XMbox_SendBlocking(&mailbox, &restartMessage, MBOX_MSG_ID_SIZE);
     XMbox_SendBlocking(&mailbox, &restartMessage, MBOX_MSG_ID_SIZE);
 
     //Receive brick information and draw everything on screen.
@@ -379,9 +381,9 @@ void draw(unsigned int* dataBuffer, const MSG_TYPE msgType){
                 }
             }
 
-            
+
             break;
-            
+
         case MSGQ_TYPE_BAR:
             int bar_x = dataBuffer[0];
             int bar_y = dataBuffer[1];
