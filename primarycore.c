@@ -79,28 +79,35 @@ int main_prog(void){
     }
     /*END TFT CONTROLLER INITIALIZATION*/
 
+    /* BEGIN XMUTEX INITIALIZATION */
+    status = initXMutex(&Mutex);
+    if (status != XST_SUCCESS) {
+        return XST_FAILURE;
+    }
+    /* END XMUTEX INITIALIZATION */
+
     //Initialize thread semaphores
     if(sem_init(&sem_running, SEM_SHARED, SEM_BLOCKED)){
-        print("Error while initializing semaphore sem_running!\r\n");
+        safePrint("Error while initializing semaphore sem_running!\r\n");
         while(TRUE); //Trap runtime here
     }
     if(sem_init(&sem_drawGameArea, SEM_SHARED, SEM_BLOCKED)){
-        print("Error while initializing semaphore sem_drawGameArea!\r\n");
+        safePrint("Error while initializing semaphore sem_drawGameArea!\r\n");
         while(TRUE); //Trap runtime here
     }
     if(sem_init(&sem_brickCollisionListener, SEM_SHARED, SEM_BLOCKED)){
-        print("Error while initializing semaphore sem_brickCollisionListener!\r\n");
+        safePrint("Error while initializing semaphore sem_brickCollisionListener!\r\n");
         while(TRUE); //Trap runtime here
     }
     if(sem_init(&sem_mailboxListener, SEM_SHARED, SEM_BLOCKED)){
-        print("Error while initializing semaphore sem_mailboxListener!\r\n");
+        safePrint("Error while initializing semaphore sem_mailboxListener!\r\n");
         while(TRUE); //Trap runtime here
     }
     if(sem_init(&sem_drawStatusArea, SEM_SHARED, SEM_BLOCKED)){
-        print("Error while initializing semaphore sem_drawStatusArea!\r\n");
+        safePrint("Error while initializing semaphore sem_drawStatusArea!\r\n");
         while(TRUE); //Trap runtime here
     }
-    print("Line 103\r\n");
+    safePrint("Line 103\r\n");
     /*
     Thread priority (0 is highest priority):
     1. thread_mainLoop:
@@ -142,21 +149,21 @@ int main_prog(void){
 void* thread_mainLoop(void){
     while(TRUE){
         //Welcome
-        welcome();print("Line 145\r\n");
+        welcome();safePrint("Line 145\r\n");
         while(!(buttonInput & BUTTON_CENTER));//while(!start)
 
         //Running
         while(lives && !win){
             //Ready
             while(!(buttonInput & BUTTON_CENTER)){ //while(!launch)
-                ready();print("Line 152\r\n");
+                ready();safePrint("Line 152\r\n");
                 sleep(SLEEPCONSTANT); //FIXME: sleep calibration
             }
 
             //Running
             while(!win && !loseLife){
                 if(!paused){
-                    running();print("Line 159\r\n");
+                    running();safePrint("Line 159\r\n");
                 }
                 else{
                     //Paused
@@ -198,24 +205,24 @@ void welcome(void){
 
     //Send a message to the secondary core, signaling a restart
     //The secondary core should reply with a draw message for every brick
-    MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART; print("Line 201\r\n");
+    MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART; safePrint("Line 201\r\n");
     int dataBuffer[3] = {MBOX_MSG_BEGIN_COMPUTATION, 0, 0};//FIXME: this is a hacky placeholder
-    XMbox_WriteBlocking(&mailbox, (u32*)&restartMessage, MBOX_MSG_ID_SIZE);print("Line 203\r\n");
+    XMbox_WriteBlocking(&mailbox, (u32*)&restartMessage, MBOX_MSG_ID_SIZE);safePrint("Line 203\r\n");
     XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, 3*sizeof(int));
-    print("Line 205\r\n");
+    safePrint("Line 205\r\n");
     //Receive brick information and draw everything on screen.
-    // sem_post(&sem_drawGameArea);print("Line 206\r\n");
-    sem_post(&sem_mailboxListener);print("Line 207\r\n");
-    // sem_post(&sem_brickCollisionListener);print("Line 208\r\n");
+    // sem_post(&sem_drawGameArea);safePrint("Line 206\r\n");
+    sem_post(&sem_mailboxListener);safePrint("Line 207\r\n");
+    // sem_post(&sem_brickCollisionListener);safePrint("Line 208\r\n");
     //Wait for the three branched threads to finish, regardless of the order.
-    sem_wait(&sem_running);print("Line 210\r\n");
+    sem_wait(&sem_running);safePrint("Line 210\r\n");
     // sem_wait(&sem_running);
     // sem_wait(&sem_running);
 
     //Draw the status area
     sem_post(&sem_drawStatusArea);
     //Wait for the drawing operation to complete.
-    sem_wait(&sem_running);print("Line 218\r\n");
+    sem_wait(&sem_running);safePrint("Line 218\r\n");
     //TODO: draw welcome text
 }
 
@@ -248,7 +255,7 @@ void running(void){
     buildBallMessage(&ball, message);
     //Send the ball position to the secondary core to initialize collision checking
     XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
-    print("primarycore: line 251\r\n");
+    safePrint("primarycore: line 251\r\n");
     //Receive brick information and draw everything on screen.
     // sem_post(&sem_drawGameArea);
     // sem_post(&sem_brickCollisionListener);
@@ -257,7 +264,7 @@ void running(void){
     // sem_wait(&sem_running);
     // sem_wait(&sem_running);
     sem_wait(&sem_running);
-    print("primarycore: line 260\r\n");
+    safePrint("primarycore: line 260\r\n");
 
     //Draw the status area
     sem_post(&sem_drawStatusArea);
@@ -279,7 +286,7 @@ void* thread_drawGameArea(void){
         sem_wait(&sem_drawGameArea); //Wait to be signaled
         //TODO: draw background ("clean" the frame)
         // while(!brickUpdateComplete){
-            print("Line 281\r\n");
+            safePrint("Line 281\r\n");
             while(readFromMessageQueue(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR)){
                 draw(dataBuffer, MSGQ_TYPE_BAR);
             }
@@ -332,25 +339,25 @@ void* thread_mailboxListener(void){
     MBOX_MSG_TYPE msgType;
     unsigned int dataBuffer[3]; //FIXME: magic numbers when declaring array size
     while(TRUE){
-        sem_wait(&sem_mailboxListener);print("Line 333\r\n");
+        sem_wait(&sem_mailboxListener);safePrint("Line 333\r\n");
         brickUpdateComplete = FALSE;
         while(!brickUpdateComplete){
             XMbox_ReadBlocking(&mailbox, (u32*)&msgType, MBOX_MSG_ID_SIZE);
             switch(msgType){
                 case MBOX_MSG_DRAW_BRICK:
-                    print("Line 340\r\n");
+                    safePrint("Line 340\r\n");
                     XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE);
                     queueMsg(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK);
                     sem_post(&sem_drawGameArea); //TODO: fix semaphore when drawGameArea has been split into several methods
                     break;
                 case MBOX_MSG_COLLISION:
-                    print("Line 346\r\n");
+                    safePrint("Line 346\r\n");
                     XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE);
                     queueMsg(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_MSGSIZE_BRICK_COLLISION);
                     sem_post(&sem_brickCollisionListener);
                     break;
                 case MBOX_MSG_COMPUTATION_COMPLETE:
-                    print("Line 352\r\n");
+                    safePrint("Line 352\r\n");
                     brickUpdateComplete = TRUE;
                     break;
                 default:
@@ -439,4 +446,12 @@ void gameOver(void){
 //Win method should display "Win" text and prompt the user to press a key to restart
 void gameWin(void){
 
+}
+
+//FIXME This method is implemented in both primary and secondary which seems redundant, perhaps put in xmutexConfig
+//FIXME Should probably be changed to accept a mutex pointer instead of using some kind of global
+void safePrint(const char *ptr) {
+    XMutex_Lock(&Mutex, MUTEX_NUM);
+    print(*ptr);
+    XMutex_Unlock(&Mutex, MUTEX_NUM);
 }

@@ -12,6 +12,7 @@
 #include "semaphore.h"
 
 #include "xtftConfig.h"
+#include "xmutexConfig.h"
 #include "buttonIO.h"
 #include "MainScreen.h"
 #include "mailboxConfig.h"
@@ -55,6 +56,7 @@ static unsigned int lives;
 static unsigned int score;
 
 static XTft TftInstance;
+static XMutex Mutex;
 
 //pthread pointers
 static pthread_t pthread_mainLoop,
@@ -81,6 +83,7 @@ static sem_t sem_running,
  int readFromMessageQueue(const MSGQ_TYPE id, void* dataBuffer, const MSGQ_MSGSIZE size);
  void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType);
  void buildBallMessage(Ball* ball, unsigned int* message);
+ void safePrint(const char *ptr);
 
 //Firmware entry point
 int main(void);
