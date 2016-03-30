@@ -29,7 +29,7 @@ static void gpPBIntHandler(void *arg)
 
 //Firmware entry point
 int main(void){
-    xilkernel_init(); print("Line 32\r\n");
+    xilkernel_init();
     xmk_add_static_thread(main_prog,0);
     xilkernel_start();
     xilkernel_main ();
@@ -38,7 +38,7 @@ int main(void){
 
 //Xilkernel entry point
 int main_prog(void){
-    int status;print("Line 41\r\n");
+	int status;
     /*BEGIN MAILBOX INITIALIZATION*/
     XMbox_Config *ConfigPtr;
     ConfigPtr = XMbox_LookupConfig(MBOX_DEVICE_ID);
@@ -121,10 +121,6 @@ int main_prog(void){
 
     schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
-    pthread_create(&pthread_mailboxListener, &attr, (void*)thread_mailboxListener, NULL);
-
-    schedpar.sched_priority++;
-    pthread_attr_setschedparam(&attr, &schedpar);
     pthread_create(&pthread_brickCollisionListener, &attr, (void*)thread_brickCollisionListener, NULL);
 
     schedpar.sched_priority++;
@@ -134,6 +130,10 @@ int main_prog(void){
     schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     pthread_create(&pthread_drawStatusArea, &attr, (void*)thread_drawStatusArea, NULL);
+
+    schedpar.sched_priority++;
+    pthread_attr_setschedparam(&attr, &schedpar);
+    pthread_create(&pthread_mailboxListener, &attr, (void*)thread_mailboxListener, NULL);
 
     return 0;
 }
@@ -189,9 +189,9 @@ void welcome(void){
     //FIXME: hacky fix with the bar.x
     queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
     // ball = Ball_default; //FIXME: restore Ball_default
-    ball.x = 0;
-    ball.y = 0;
-    ball.d = 0;
+    ball.x = bar.x;
+    ball.y = BAR_Y - DIAMETER / 2;
+    ball.d = 90;
     ball.s = 10;
     ball.c = 0;
     queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
@@ -199,18 +199,18 @@ void welcome(void){
     //Send a message to the secondary core, signaling a restart
     //The secondary core should reply with a draw message for every brick
     MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART; print("Line 201\r\n");
-    print("Line 202\r\n");int dataBuffer[3] = {MBOX_MSG_BEGIN_COMPUTATION, 0, 0};//FIXME: this is a hacky placeholder
-    XMbox_WriteBlocking(&mailbox, (u32*)&restartMessage, MBOX_MSG_ID_SIZE);
+    int dataBuffer[3] = {MBOX_MSG_BEGIN_COMPUTATION, 0, 0};//FIXME: this is a hacky placeholder
+    XMbox_WriteBlocking(&mailbox, (u32*)&restartMessage, MBOX_MSG_ID_SIZE);print("Line 203\r\n");
     XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, 3*sizeof(int));
     print("Line 205\r\n");
     //Receive brick information and draw everything on screen.
-    sem_post(&sem_drawGameArea);
-    sem_post(&sem_mailboxListener);
-    sem_post(&sem_brickCollisionListener);
+    // sem_post(&sem_drawGameArea);print("Line 206\r\n");
+    sem_post(&sem_mailboxListener);print("Line 207\r\n");
+    // sem_post(&sem_brickCollisionListener);print("Line 208\r\n");
     //Wait for the three branched threads to finish, regardless of the order.
-    sem_wait(&sem_running);
-    sem_wait(&sem_running);
-    sem_wait(&sem_running);
+    sem_wait(&sem_running);print("Line 210\r\n");
+    // sem_wait(&sem_running);
+    // sem_wait(&sem_running);
 
     //Draw the status area
     sem_post(&sem_drawStatusArea);
@@ -244,18 +244,18 @@ void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
 void running(void){
     updateBar(&bar, barMovementCode);
     updateBallPosition(&ball);
-    unsigned int message[MBOX_MSG_ID_SIZE + MBOX_MSG_BALL_SIZE];
+    unsigned int message[MBOX_MSG_BEGIN_COMPUTATION_SIZE];
     buildBallMessage(&ball, message);
     //Send the ball position to the secondary core to initialize collision checking
-    XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_ID_SIZE + MBOX_MSG_BALL_SIZE);
+    XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
 
     //Receive brick information and draw everything on screen.
-    sem_post(&sem_drawGameArea);
-    sem_post(&sem_brickCollisionListener);
+    // sem_post(&sem_drawGameArea);
+    // sem_post(&sem_brickCollisionListener);
     sem_post(&sem_mailboxListener);
     //Wait for the three branched threads to finish, regardless of the order.
-    sem_wait(&sem_running);
-    sem_wait(&sem_running);
+    // sem_wait(&sem_running);
+    // sem_wait(&sem_running);
     sem_wait(&sem_running);
 
     //Draw the status area
@@ -271,28 +271,25 @@ void buildBallMessage(Ball* ball, unsigned int* message){
 }
 
 //Receives messagequeue messages
+//TODO: split into separate draw methods:ball, bar, brick, background
 void* thread_drawGameArea(void){
-    int hasDrawn = FALSE;
     unsigned int dataBuffer[3];
     while(TRUE){
         sem_wait(&sem_drawGameArea); //Wait to be signaled
         //TODO: draw background ("clean" the frame)
-        while(!brickUpdateComplete || hasDrawn){
-            hasDrawn = FALSE;print("Line 281\r\n");
+        // while(!brickUpdateComplete){
+            print("Line 281\r\n");
             while(readFromMessageQueue(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR)){
-                hasDrawn = TRUE;
                 draw(dataBuffer, MSGQ_TYPE_BAR);
             }
             while(readFromMessageQueue(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL)){
-                hasDrawn = TRUE;
                 draw(dataBuffer, MSGQ_TYPE_BALL);
             }
             while(readFromMessageQueue(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK)){
-                hasDrawn = TRUE;
                 draw(dataBuffer, MSGQ_TYPE_BRICK);
             }
-        }
-        sem_post(&sem_running); //Signal the running thread that we're done.
+        // }
+        // sem_post(&sem_running); //Signal the running thread that we're done.
     }
 }
 
@@ -314,21 +311,17 @@ int readFromMessageQueue(const MSGQ_TYPE id, void* dataBuffer, const MSGQ_MSGSIZ
 
 //Receives messagequeue messages
 void* thread_brickCollisionListener(void){
-    int hasCollided = FALSE;
     unsigned int dataBuffer[3];
     while(TRUE){
         sem_wait(&sem_brickCollisionListener);
-        while(!brickUpdateComplete || hasCollided){
-            hasCollided = FALSE;
+            //TODO: remove the while loop. no point in it :P
             while(readFromMessageQueue(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_MSGSIZE_BRICK_COLLISION)){
-                hasCollided = TRUE;
 //                if(increaseScore(dataBuffer[1])){ //FIXME: magic numbers when interpreting the data buffer
 //                    increaseSpeed(ball);
 //                }
                 updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
             }
-        }
-        sem_post(&sem_running); //Signal the running thread that we're done.
+        // sem_post(&sem_running); //Signal the running thread that we're done.
     }
 }
 
@@ -338,20 +331,25 @@ void* thread_mailboxListener(void){
     MBOX_MSG_TYPE msgType;
     unsigned int dataBuffer[3]; //FIXME: magic numbers when declaring array size
     while(TRUE){
-        sem_wait(&sem_mailboxListener);
+        sem_wait(&sem_mailboxListener);print("Line 333\r\n");
         brickUpdateComplete = FALSE;
         while(!brickUpdateComplete){
             XMbox_ReadBlocking(&mailbox, (u32*)&msgType, MBOX_MSG_ID_SIZE);
             switch(msgType){
                 case MBOX_MSG_DRAW_BRICK:
+                    print("Line 340\r\n");
                     XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE);
                     queueMsg(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK);
+                    sem_post(&sem_drawGameArea); //TODO: fix semaphore when drawGameArea has been split into several methods
                     break;
                 case MBOX_MSG_COLLISION:
+                    print("Line 346\r\n");
                     XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE);
                     queueMsg(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_MSGSIZE_BRICK_COLLISION);
+                    sem_post(&sem_brickCollisionListener);
                     break;
                 case MBOX_MSG_COMPUTATION_COMPLETE:
+                    print("Line 352\r\n");
                     brickUpdateComplete = TRUE;
                     break;
                 default:
