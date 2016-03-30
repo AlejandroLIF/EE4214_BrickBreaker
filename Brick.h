@@ -13,8 +13,8 @@
 #define BRICK_SIZE      12;
 
 struct Brick_s{
-    const int x; /*horizontal anchor*/
-    const int y; /*vertical anchor*/
+    int x; /*horizontal anchor*/
+    int y; /*vertical anchor*/
     int c;       /*color*/
 };
 

@@ -214,6 +214,7 @@ void columnCode(const int colID){
     int i;
     int x = LEFT_WALL + BRICK_SPACING * (colID + 1) + BRICK_WIDTH * (colID + 0.5); //FIXME: this holds the column x position constant. It should not be here.
     Brick b;
+    CollisionCode collision;
     int dataBuffer[4];
     while(TRUE){print("secondarycore: Line 196\r\n");
         xil_printf("Column: %d\r\n", colID);
@@ -222,7 +223,9 @@ void columnCode(const int colID){
             for(i = 0; i < ROWS; i++){
                 xil_printf("Column: %d Brick: %d\r\n", colID, i);
                 if(activeBricks[colID][i]){
-                    //TODO: check brick collision with ball
+                    //TODO: send resulting CollisionCode to primarycore
+                	b = toBrick(colID, i);
+                    collision = checkCollideBrick(&ball, &b);
                     dataBuffer[0] = MBOX_MSG_DRAW_BRICK;
                     dataBuffer[1] = x;
                     dataBuffer[2] = (int)(CEIL + BRICK_SPACING * (i+1) + BRICK_HEIGHT * (i + 0.5));
@@ -234,6 +237,13 @@ void columnCode(const int colID){
         sem_post(&sem_updateComplete);
         sem_wait(&sem_columnWait);
     }
+}
+
+Brick toBrick(int colID, int bricknum) {
+    Brick b;
+    b.x = LEFT_WALL + BRICK_SPACING * (colID + 1) + BRICK_WIDTH * (colID + 0.5);
+    b.y = (int) (CEIL + BRICK_SPACING * (bricknum+1) + BRICK_HEIGHT * (bricknum + 0.5));
+    return b;
 }
 
 void* thread_col0(void){
