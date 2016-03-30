@@ -16,6 +16,7 @@
 #include "Brick.h"
 #include "MainScreen.h"
 #include "mailboxConfig.h"
+#include "collisions.h"
 
 #define MY_CPU_ID XPAR_CPU_ID
 #define MBOX_DEVICE_ID		XPAR_MBOX_0_DEVICE_ID
@@ -78,5 +79,6 @@ void* thread_col6(void);
 void* thread_col7(void);
 void* thread_col8(void);
 void* thread_col9(void);
+Brick toBrick(int colID, int bricknum);
 
 #endif
