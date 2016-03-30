@@ -132,9 +132,11 @@ void* thread_mailboxListener(void){
         XMbox_ReadBlocking(&mailbox,(u32*)&msgType, MBOX_MSG_ID_SIZE);
         switch(msgType){
             case MBOX_MSG_RESTART:
+                print("secondarycore: Line 135\r\n");
                 restart();
                 break;
             case MBOX_MSG_BEGIN_COMPUTATION:
+                print("secondarycore: Line 138\r\n");
                 XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_BALL_SIZE);
                 ball.x = dataBuffer[0];
                 ball.y = dataBuffer[1];
@@ -143,10 +145,11 @@ void* thread_mailboxListener(void){
                 }
                 break;
             case MBOX_MSG_UPDATE_GOLDEN:
+                print("secondarycore: Line 148\r\n");
                 sem_post(&sem_goldenColumns);
                 break;
             default:
-                while(TRUE); //Error! Trap runtime here. THIS SHOULD NOT HAPPEN
+                while(TRUE){print("secondarycore: line 149\r\n");}; //Error! Trap runtime here. THIS SHOULD NOT HAPPEN
         }
     }
 }
@@ -225,7 +228,7 @@ void columnCode(const int colID){
                 if(activeBricks[colID][i]){
                     //TODO: send resulting CollisionCode to primarycore
                 	b = toBrick(colID, i);
-                    collision = checkCollideBrick(&ball, &b);
+//                    collision = checkCollideBrick(&ball, &b);
                     dataBuffer[0] = MBOX_MSG_DRAW_BRICK;
                     dataBuffer[1] = x;
                     dataBuffer[2] = (int)(CEIL + BRICK_SPACING * (i+1) + BRICK_HEIGHT * (i + 0.5));
