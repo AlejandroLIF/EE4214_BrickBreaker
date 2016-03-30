@@ -147,7 +147,7 @@ static inline int makeGolden(){
 }
 
 void* thread_goldenSelector(void){
-    int* goldenPointers[MAX_GOLDEN_COLUMNS];
+    int* goldenPointers[MAX_GOLDEN_COLUMNS];print("secondarycore: Line 150\r\n");
     int nextPointer = 0;
     int i = 0;
 
@@ -159,6 +159,7 @@ void* thread_goldenSelector(void){
     while(TRUE){
         //Randomly select amongst the columns which still have bricks left.
         if(bricksLeft[i] && makeGolden()){
+            print("secondarycore: Line 162\r\n");
             sem_wait(&sem_goldenColumns);
             *(goldenPointers[nextPointer]) = FALSE;
             goldenPointers[nextPointer] = &goldenColumn[i];
@@ -175,6 +176,7 @@ void* thread_updateComplete(void){
     int i;
     while(TRUE){
         for(i = 0; i < COLUMNS; i++){
+            print("secondarycore: Line 179\r\n");
             sem_wait(&sem_updateComplete);
         }
         XMbox_WriteBlocking(&mailbox, (u32*)&computationComplete, MBOX_MSG_ID_SIZE);

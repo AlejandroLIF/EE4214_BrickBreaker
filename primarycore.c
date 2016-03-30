@@ -29,7 +29,7 @@ static void gpPBIntHandler(void *arg)
 
 //Firmware entry point
 int main(void){
-    xilkernel_init();
+    xilkernel_init(); print("Line 32\r\n");
     xmk_add_static_thread(main_prog,0);
     xilkernel_start();
     xilkernel_main ();
@@ -38,7 +38,7 @@ int main(void){
 
 //Xilkernel entry point
 int main_prog(void){
-    int status;
+    int status;print("Line 41\r\n");
     /*BEGIN MAILBOX INITIALIZATION*/
     XMbox_Config *ConfigPtr;
     ConfigPtr = XMbox_LookupConfig(MBOX_DEVICE_ID);
@@ -100,7 +100,7 @@ int main_prog(void){
         print("Error while initializing semaphore sem_drawStatusArea!\r\n");
         while(TRUE); //Trap runtime here
     }
-
+    print("Line 103\r\n");
     /*
     Thread priority (0 is highest priority):
     1. thread_mainLoop:
@@ -142,21 +142,21 @@ int main_prog(void){
 void* thread_mainLoop(void){
     while(TRUE){
         //Welcome
-        welcome();
+        welcome();print("Line 145\r\n");
         while(!(buttonInput & BUTTON_CENTER));//while(!start)
 
         //Running
         while(lives && !win){
             //Ready
             while(!(buttonInput & BUTTON_CENTER)){ //while(!launch)
-                ready();
+                ready();print("Line 152\r\n");
                 sleep(SLEEPCONSTANT); //FIXME: sleep calibration
             }
 
             //Running
             while(!win && !loseLife){
                 if(!paused){
-                    running();
+                    running();print("Line 159\r\n");
                 }
                 else{
                     //Paused
@@ -198,11 +198,11 @@ void welcome(void){
 
     //Send a message to the secondary core, signaling a restart
     //The secondary core should reply with a draw message for every brick
-    MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART;
-    int dataBuffer[3] = {MBOX_MSG_BEGIN_COMPUTATION, 0, 0};//FIXME: this is a hacky placeholder
+    MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART; print("Line 201\r\n");
+    print("Line 202\r\n");int dataBuffer[3] = {MBOX_MSG_BEGIN_COMPUTATION, 0, 0};//FIXME: this is a hacky placeholder
     XMbox_WriteBlocking(&mailbox, (u32*)&restartMessage, MBOX_MSG_ID_SIZE);
     XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, 3*sizeof(int));
-
+    print("Line 205\r\n");
     //Receive brick information and draw everything on screen.
     sem_post(&sem_drawGameArea);
     sem_post(&sem_mailboxListener);
@@ -215,7 +215,7 @@ void welcome(void){
     //Draw the status area
     sem_post(&sem_drawStatusArea);
     //Wait for the drawing operation to complete.
-    sem_wait(&sem_running);
+    sem_wait(&sem_running);print("Line 218\r\n");
     //TODO: draw welcome text
 }
 
@@ -278,7 +278,7 @@ void* thread_drawGameArea(void){
         sem_wait(&sem_drawGameArea); //Wait to be signaled
         //TODO: draw background ("clean" the frame)
         while(!brickUpdateComplete || hasDrawn){
-            hasDrawn = FALSE;
+            hasDrawn = FALSE;print("Line 281\r\n");
             while(readFromMessageQueue(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR)){
                 hasDrawn = TRUE;
                 draw(dataBuffer, MSGQ_TYPE_BAR);
