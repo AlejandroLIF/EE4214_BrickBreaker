@@ -1,4 +1,5 @@
 #ifndef COLLISIONS_C
+#define COLLISION_C
 #include "collisions.h"
 
 CollisionCode checkCollideBar(Ball* ball, Bar* bar) {
