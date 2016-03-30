@@ -248,7 +248,7 @@ void running(void){
     buildBallMessage(&ball, message);
     //Send the ball position to the secondary core to initialize collision checking
     XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
-
+    print("primarycore: line 251\r\n");
     //Receive brick information and draw everything on screen.
     // sem_post(&sem_drawGameArea);
     // sem_post(&sem_brickCollisionListener);
@@ -257,6 +257,7 @@ void running(void){
     // sem_wait(&sem_running);
     // sem_wait(&sem_running);
     sem_wait(&sem_running);
+    print("primarycore: line 260\r\n");
 
     //Draw the status area
     sem_post(&sem_drawStatusArea);
@@ -265,7 +266,7 @@ void running(void){
 }
 
 void buildBallMessage(Ball* ball, unsigned int* message){
-    message[0] = MBOX_MSG_BALL;
+    message[0] = MBOX_MSG_BEGIN_COMPUTATION;
     message[1] = ball->x;
     message[2] = ball->y;
 }
