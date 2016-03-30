@@ -15,32 +15,39 @@ int main_prog(void){
     XMbox_Config *ConfigPtr;
     ConfigPtr = XMbox_LookupConfig(MBOX_DEVICE_ID);
     if(ConfigPtr == (XMbox_Config *)NULL){
-        print("Error configuring mailbox uB1 Receiver\r\n");
+        safePrint("Error configuring mailbox uB1 Receiver\r\n");
         return XST_FAILURE;
     }
 
     status = XMbox_CfgInitialize(&mailbox, ConfigPtr, ConfigPtr->BaseAddress);
     if (status != XST_SUCCESS) {
-        print("Error initializing mailbox uB1 Receiver--\r\n");
+        safePrint("Error initializing mailbox uB1 Receiver--\r\n");
         return XST_FAILURE;
     }
     /*END MAILBOX INITIALIZATION*/
 
+    /* BEGIN XMUTEX INITIALIZATION */
+    status = initXMutex(&Mutex);
+    if (status != XST_SUCCESS) {
+        return XST_FAILURE;
+    }
+    /* END XMUTEX INITIALIZATION */
+
     //Initialize thread semaphores
     if(sem_init(&sem_goldenColumns, SEM_SHARED, MAX_GOLDEN_COLUMNS)){
-        print("Error while initializing semaphore sem_goldenColumns!\r\n");
+        safePrint("Error while initializing semaphore sem_goldenColumns!\r\n");
         while(TRUE); //Trap runtime here
     }
     if(sem_init(&sem_updateComplete, SEM_SHARED, SEM_BLOCKED)){
-        print("Error while initializing semaphore sem_updateComplete!\r\n");
+        safePrint("Error while initializing semaphore sem_updateComplete!\r\n");
         while(TRUE); //Trap runtime here
     }
     if(sem_init(&sem_columnStart, SEM_SHARED, SEM_BLOCKED)){
-        print("Error while initializing semaphore sem_columnStart!\r\n");
+        safePrint("Error while initializing semaphore sem_columnStart!\r\n");
         while(TRUE); //Trap runtime here
     }
     if(sem_init(&sem_columnWait, SEM_SHARED, SEM_BLOCKED)){
-        print("Error while initializing semaphore sem_columnWait!\r\n");
+        safePrint("Error while initializing semaphore sem_columnWait!\r\n");
         while(TRUE); //Trap runtime here
     }
 
@@ -57,67 +64,67 @@ int main_prog(void){
     schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     while(status = pthread_create(&pthread_col0, &attr, (void*)thread_col0, NULL)){
-        print("Error col 0!\r\n");
+        safePrint("Error col 0!\r\n");
     }
 
     // schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     while(status = pthread_create(&pthread_col1, &attr, (void*)thread_col1, NULL)){
-        print("Error col 1!\r\n");
+        safePrint("Error col 1!\r\n");
     }
 
     // schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     while(status = pthread_create(&pthread_col2, &attr, (void*)thread_col2, NULL)){
-        print("Error col 2!\r\n");
+        safePrint("Error col 2!\r\n");
     }
 
     // schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     while(status = pthread_create(&pthread_col3, &attr, (void*)thread_col3, NULL)){
-        print("Error col 3!\r\n");
+        safePrint("Error col 3!\r\n");
     }
 
     // schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     while(status = pthread_create(&pthread_col4, &attr, (void*)thread_col4, NULL)){
-        print("Error col 4!\r\n");
+        safePrint("Error col 4!\r\n");
     }
 
     // schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     while(status = pthread_create(&pthread_col5, &attr, (void*)thread_col5, NULL)){
-        print("Error col 5!\r\n");
+        safePrint("Error col 5!\r\n");
     }
 
     // schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     while(status = pthread_create(&pthread_col6, &attr, (void*)thread_col6, NULL)){
-        print("Error col 6!\r\n");
+        safePrint("Error col 6!\r\n");
     }
 
     // schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     while(status = pthread_create(&pthread_col7, &attr, (void*)thread_col7, NULL)){
-        print("Error col 7!\r\n");
+        safePrint("Error col 7!\r\n");
     }
 
     // schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     while(status = pthread_create(&pthread_col8, &attr, (void*)thread_col8, NULL)){
-        print("Error col 8!\r\n");
+        safePrint("Error col 8!\r\n");
     }
 
     // schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     while(status = pthread_create(&pthread_col9, &attr, (void*)thread_col9, NULL)){
-        print("Error col 9!\r\n");
+        safePrint("Error col 9!\r\n");
     }
 
     schedpar.sched_priority++;
     pthread_attr_setschedparam(&attr, &schedpar);
     while(status = pthread_create(&pthread_mailboxListener, &attr, (void*)thread_mailboxListener, NULL)){
-        print("ERROR MAILBOX LISTENER!\r\n");
+        safePrint("ERROR MAILBOX LISTENER!\r\n");
     }
 
     return 0;
@@ -128,28 +135,28 @@ void* thread_mailboxListener(void){
     MBOX_MSG_TYPE msgType;
     int i, j;
 
-    while(TRUE){print("secondarycore: Line 131\r\n");
+    while(TRUE){safePrint("secondarycore: Line 131\r\n");
         XMbox_ReadBlocking(&mailbox,(u32*)&msgType, MBOX_MSG_ID_SIZE);
         switch(msgType){
             case MBOX_MSG_RESTART:
-                print("secondarycore: Line 135\r\n");
+                safePrint("secondarycore: Line 135\r\n");
                 restart();
                 break;
             case MBOX_MSG_BEGIN_COMPUTATION:
-                print("secondarycore: Line 138\r\n");
+                safePrint("secondarycore: Line 138\r\n");
                 XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_BALL_SIZE);
                 ball.x = dataBuffer[0];
                 ball.y = dataBuffer[1];
                 for(i = 0; i < COLUMNS; i++){
-                    sem_post(&sem_columnStart); print("secondary core: Line 120\r\n");
+                    sem_post(&sem_columnStart); safePrint("secondary core: Line 120\r\n");
                 }
                 break;
             case MBOX_MSG_UPDATE_GOLDEN:
-                print("secondarycore: Line 148\r\n");
+                safePrint("secondarycore: Line 148\r\n");
                 sem_post(&sem_goldenColumns);
                 break;
             default:
-                while(TRUE){print("secondarycore: line 149\r\n");}; //Error! Trap runtime here. THIS SHOULD NOT HAPPEN
+                while(TRUE){safePrint("secondarycore: line 149\r\n");}; //Error! Trap runtime here. THIS SHOULD NOT HAPPEN
         }
     }
 }
@@ -184,9 +191,9 @@ void* thread_goldenSelector(void){
     i = 0;
     while(TRUE){
         //Randomly select amongst the columns which still have bricks left.
-        print("secondarycore: Line 160\r\n");
+        safePrint("secondarycore: Line 160\r\n");
         if(bricksLeft[i] && makeGolden()){
-            print("secondarycore: Line 162\r\n");
+            safePrint("secondarycore: Line 162\r\n");
             sem_wait(&sem_goldenColumns);
             *(goldenPointers[nextPointer]) = FALSE;
             goldenPointers[nextPointer] = &goldenColumn[i];
@@ -203,7 +210,7 @@ void* thread_updateComplete(void){
     int i;
     while(TRUE){
         for(i = 0; i < COLUMNS; i++){
-            print("secondarycore: Line 179\r\n");
+            safePrint("secondarycore: Line 179\r\n");
             sem_wait(&sem_updateComplete);
         }
         XMbox_WriteBlocking(&mailbox, (u32*)&computationComplete, MBOX_MSG_ID_SIZE);
@@ -219,7 +226,7 @@ void columnCode(const int colID){
     Brick b;
     CollisionCode collision;
     int dataBuffer[4];
-    while(TRUE){print("secondarycore: Line 196\r\n");
+    while(TRUE){safePrint("secondarycore: Line 196\r\n");
         xil_printf("Column: %d\r\n", colID);
         sem_wait(&sem_columnStart);
         if(bricksLeft[colID]){
@@ -288,4 +295,11 @@ void* thread_col8(void){
 void* thread_col9(void){
     columnCode(9);
     return 0;
+}
+
+//FIXME This method is implemented in both primary and secondary which seems redundant, perhaps put in xmutexConfig
+void safePrint(const char *ptr) {
+    XMutex_Lock(&Mutex, MUTEX_NUM);
+    print(*ptr);
+    XMutex_Unlock(&Mutex, MUTEX_NUM);
 }

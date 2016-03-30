@@ -17,6 +17,7 @@
 #include "MainScreen.h"
 #include "mailboxConfig.h"
 #include "collisions.h"
+#include "xmutexConfig.h"
 
 #define MY_CPU_ID XPAR_CPU_ID
 #define MBOX_DEVICE_ID		XPAR_MBOX_0_DEVICE_ID
@@ -45,6 +46,7 @@ static sem_t sem_goldenColumns,
              sem_columnWait;
 
 static Ball ball;
+static XMutex Mutex;
 
 static pthread_t pthread_mailboxListener,
                  pthread_updateComplete,
@@ -80,5 +82,6 @@ void* thread_col7(void);
 void* thread_col8(void);
 void* thread_col9(void);
 Brick toBrick(int colID, int bricknum);
+void safePrint(const char *ptr);
 
 #endif
