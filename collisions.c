@@ -75,8 +75,31 @@ CollisionCode checkCollideWall(Ball* ball) {
        BL         BC          BR
 */
 
+//TODO Determine whether or not corner collision is at all possible using below
+//     May have to change some < or > to <= or >= for the case to be included
 CollisionCode checkCollideBrick(Ball* ball, Brick* brick) {
+	//Check proximity of ball to brick
+	if(ball->x < brick->x - BRICK_WIDTH/2) {
+		//Ball is to the left of brick
+		return COLLIDE_NONE;
+	}
 
+	if(ball->x > brick->x + BRICK_WIDTH/2) {
+		//Ball is to the right of brick
+		return COLLIDE_NONE;
+	}
+
+	if(ball->y < brick->y - BRICK_HEIGHT/2) {
+		//Ball is above brick
+		return COLLIDE_NONE;
+	}
+
+	if(ball->y > brick->y + BRICK_HEIGHT/2) {
+		//Ball is below brick
+		return COLLIDE_NONE;
+	}
+
+	//Ball is now hitting the brick, check where
 	if(ball->x < brick->x) {
 		//To the left of vertical center line
 		//Possible collisions: UL, UC, CL, BL, BC
