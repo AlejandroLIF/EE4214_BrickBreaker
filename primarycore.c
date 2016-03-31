@@ -441,7 +441,7 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
             for(j = 0; j < DIAMETER; j++) {
                 for (i = 0; i < DIAMETER; i++) {
                     if(BALL_MASK[j][i] == 0xFFFFFFFF) {
-                        XTft_SetPixel(&TftInstance, x - DIAMETER + i, y - DIAMETER + j, BALL_COLOR);
+                        XTft_SetPixel(&TftInstance, x - DIAMETER/2 + i, y - DIAMETER/2 + j, BALL_COLOR);
                     }
                 }
             }
