@@ -248,10 +248,13 @@ void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
 }
 
 void running(void){
+    const int drawGameAreaBackground = 1;
     updateBar(&bar, barMovementCode);
     updateBallPosition(&ball);
     queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BALL);
     queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
+
+    queueMsg(MSGQ_TYPE_BACKGROUND_GAMEAREA, &drawGameAreaBackground, MSGQ_SIZE_BACKGROUND_GAMEAREA);
 
     unsigned int message[MBOX_MSG_BEGIN_COMPUTATION_SIZE];
     buildBallMessage(&ball, message);
@@ -284,22 +287,22 @@ void* thread_drawGameArea(void){
     unsigned int dataBuffer[3];
     while(TRUE){
         sem_wait(&sem_drawGameArea); //Wait to be signaled
-        //TODO: draw background ("clean" the frame)
-        // while(!brickUpdateComplete){
-            while(readFromMessageQueue(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR)){
-                safePrint("primarycore: drawBar\r\n");
-                draw(dataBuffer, MSGQ_TYPE_BAR);
-            }
-            while(readFromMessageQueue(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL)){
-                safePrint("primarycore: drawBall\r\n");
-                draw(dataBuffer, MSGQ_TYPE_BALL);
-            }
-            while(readFromMessageQueue(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK)){
-                safePrint("primarycore: drawBrick\r\n");
-                draw(dataBuffer, MSGQ_TYPE_BRICK);
-            }
-        // }
-        // sem_post(&sem_running); //Signal the running thread that we're done.
+        while(readFromMessageQueue(MSGQ_TYPE_BACKGROUND, dataBuffer, MSGQ_MSGSIZE_BACKGROUND)){
+            safePrint("primarycore: drawBackground\r\n");
+            draw(dataBuffer, MSGQ_TYPE_BACKGROUND);
+        }
+        while(readFromMessageQueue(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR)){
+            safePrint("primarycore: drawBar\r\n");
+            draw(dataBuffer, MSGQ_TYPE_BAR);
+        }
+        while(readFromMessageQueue(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL)){
+            safePrint("primarycore: drawBall\r\n");
+            draw(dataBuffer, MSGQ_TYPE_BALL);
+        }
+        while(readFromMessageQueue(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK)){
+            safePrint("primarycore: drawBrick\r\n");
+            draw(dataBuffer, MSGQ_TYPE_BRICK);
+        }
     }
 }
 
@@ -368,9 +371,10 @@ void* thread_mailboxListener(void){
 }
 
 void* thread_drawStatusArea(void){
+    int drawStatusAreaBackground = 1;
     while(TRUE){
         sem_wait(&sem_drawStatusArea);
-        //TODO: draw background ("clean" the frame)
+        queueMsg(MSGQ_TYPE_BACKGROUND_STATUSAREA, &drawStatusAreaBackground, MSGQ_SIZE_BACKGROUND_STATUSAREA);
         //TODO: draw the status area
         sem_post(&sem_running); //Signal the running thread that we're done.
     }
