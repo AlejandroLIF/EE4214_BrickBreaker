@@ -22,7 +22,7 @@
 #include "collisions.h"
 
 #define INITIAL_LIVES       3
-#define SLEEPCONSTANT       40
+#define SLEEPCONSTANT       1
 #define SEM_SHARED          1
 #define SEM_PRIVATE         0
 #define SEM_AVAILABLE       1

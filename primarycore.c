@@ -148,7 +148,7 @@ int main_prog(void){
 void* thread_mainLoop(void){
     while(TRUE){
         //Welcome
-        safePrint("primarycore: Welcome\r\n");
+        // safePrint("primarycore: Welcome\r\n");
         welcome();
         while(!(buttonInput & BUTTON_CENTER));//while(!start)
         sleep(1000); //FIXME: hardcoded delay
@@ -156,7 +156,7 @@ void* thread_mainLoop(void){
         while(lives && !win){
             //Ready
             while(FALSE/*!(buttonInput & BUTTON_CENTER)*/){ //while(!launch) //FIXME: QUEUES MESSAGES, BUT NOTHING IS READING THEM
-                safePrint("primarycore: ready\r\n");
+                // safePrint("primarycore: ready\r\n");
                 ready();
                 sleep(SLEEPCONSTANT); //FIXME: sleep calibration
             }
@@ -164,7 +164,7 @@ void* thread_mainLoop(void){
             //Running
             while(!win && !loseLife){
                 if(!paused){
-                    safePrint("primarycore: running\r\n");
+                    // safePrint("primarycore: running\r\n");
                     running();
                 }
                 else{
@@ -259,6 +259,19 @@ void running(void){
 
     queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
 
+    CollisionCode collisionWallBar;
+
+    //Check collision with walls
+    collisionWallBar = checkCollideWall(&ball);
+    if(collisionWallBar != COLLIDE_NONE) {
+        updateBallDirection(&ball, collisionWallBar);
+    }
+
+    //Check collision with bar
+    collisionWallBar = checkCollideBar(&ball, &bar);
+    if(collisionWallBar != COLLIDE_NONE) {
+        updateBallDirection(&ball, collisionWallBar);
+    }
     unsigned int message[MBOX_MSG_BEGIN_COMPUTATION_SIZE];
     buildBallMessage(&ball, message);
     //Send the ball position to the secondary core to initialize collision checking
@@ -291,19 +304,19 @@ void* thread_drawGameArea(void){
         //     draw(dataBuffer, MSGQ_TYPE_BACKGROUND);
         // }
         while(readFromMessageQueue(MSGQ_TYPE_GAMEAREA, dataBuffer, MSGQ_MSGSIZE_GAMEAREA)){
-            safePrint("primarycore: drawBackground\r\n");
+            // safePrint("primarycore: drawBackground\r\n");
             draw(dataBuffer, MSGQ_TYPE_GAMEAREA);
         }
         while(readFromMessageQueue(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR)){
-            safePrint("primarycore: drawBar\r\n");
+            // safePrint("primarycore: drawBar\r\n");
             draw(dataBuffer, MSGQ_TYPE_BAR);
         }
         while(readFromMessageQueue(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL)){
-            safePrint("primarycore: drawBall\r\n");
+            // safePrint("primarycore: drawBall\r\n");
             draw(dataBuffer, MSGQ_TYPE_BALL);
         }
         while(readFromMessageQueue(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK)){
-            safePrint("primarycore: drawBrick\r\n");
+            // safePrint("primarycore: drawBrick\r\n");
             draw(dataBuffer, MSGQ_TYPE_BRICK);
         }
     }
