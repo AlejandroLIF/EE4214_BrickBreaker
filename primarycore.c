@@ -197,8 +197,8 @@ void welcome(void){
     lives = INITIAL_LIVES;
     bar.x = (LEFT_WALL + RIGHT_WALL)/2;
     //FIXME: hacky fix with the bar.x1
-    queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
-    queueMsg(MSGQ_TYPE_STATUSAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_STATUSAREA);
+//    queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
+//    queueMsg(MSGQ_TYPE_STATUSAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_STATUSAREA);
     queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
     // ball = Ball_default; //FIXME: restore Ball_default
     ball.x = bar.x;
@@ -257,7 +257,7 @@ void running(void){
     queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BALL);
     queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
 
-    queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
+//    queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
 
     CollisionCode collisionWallBar;
 
