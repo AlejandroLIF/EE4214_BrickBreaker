@@ -199,7 +199,7 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 
 		case COLLIDE_BAR_SMINUS :
 			if(ball->s >= MIN_SPEED + 10) {
-				ball->s = ball->s - 10
+				ball->s = ball->s - 10;
 			} else {
 				ball->s = MIN_SPEED;
 			}
