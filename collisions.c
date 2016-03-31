@@ -194,29 +194,53 @@ CollisionCode checkCollideBrick(Ball* ball, Brick* brick) {
 void updateBallDirection(Ball* ball, CollisionCode collision) {
 	switch (collision) {
 		case COLLIDE_BAR_AMINUS :
-		break;
+			ball->d = (165 - ball->d)%360;
+			break;
 
 		case COLLIDE_BAR_SMINUS :
-		break;
+			if(ball->s >= MIN_SPEED + 10) {
+				ball->s = ball->s - 10
+			} else {
+				ball->s = MIN_SPEED;
+			}
+			ball->d = (180 - ball->d)%360;
+			break;
+
+		case COLLIDE_BAR_N :
+			ball->d = (180 - ball->d)%360;
+			break;
+
+		case COLLIDE_BAR_SPLUS :
+			if(ball->s < MAX_SPEED - 10) {
+				ball->s = ball->s + 10;
+			} else {
+				ball->s = MAX_SPEED;
+			}
+			ball->d = (180 - ball->d)%360;
+			break;
+
+	    case COLLIDE_BAR_APLUS :
+		    ball->d = (195 - ball->d)%360;
+		    break;
 
 		case COLLIDE_WALL_LEFT :
 			ball->d = (180 - ball->d)%360;
-		break;
+			break;
 
 		case COLLIDE_WALL_RIGHT :
 			ball->d = (180 - ball->d)%360;
-		break;
+			break;
 
 		case COLLIDE_WALL_CEIL :
 			ball->d = (180 - ball->d)%360;
-		break;
+			break;
 
 		case COLLIDE_WALL_FLOOR :
 			ball->d = (180 - ball->d)%360;
-		break;
+			break;
 
 		default:
-		break;
+			break;
 
 	}
 
