@@ -22,17 +22,20 @@
 #include "collisions.h"
 
 #define INITIAL_LIVES       3
-#define SLEEPCONSTANT       40
+#define SLEEPCONSTANT       1
 #define SEM_SHARED          1
 #define SEM_PRIVATE         0
 #define SEM_AVAILABLE       1
 #define SEM_BLOCKED         0
 
 typedef enum{
-    MSGQ_MSGSIZE_BALL = 3 * sizeof(int),
-    MSGQ_MSGSIZE_BAR = 2 * sizeof(int),
-    MSGQ_MSGSIZE_BRICK = 3 * sizeof(int),
-    MSGQ_MSGSIZE_BRICK_COLLISION = 2 * sizeof(int)
+    MSGQ_MSGSIZE_BALL =             3 * sizeof(int),
+    MSGQ_MSGSIZE_BAR =              2 * sizeof(int),
+    MSGQ_MSGSIZE_BRICK =            3 * sizeof(int),
+    MSGQ_MSGSIZE_BACKGROUND =       1 * sizeof(int),
+    MSGQ_MSGSIZE_BRICK_COLLISION =  2 * sizeof(int),
+    MSGQ_MSGSIZE_GAMEAREA =         1 * sizeof(int),
+    MSGQ_MSGSIZE_STATUSAREA =       1 * sizeof(int)
 } MSGQ_MSGSIZE;
 
 typedef enum{

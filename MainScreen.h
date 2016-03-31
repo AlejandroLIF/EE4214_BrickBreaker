@@ -14,7 +14,6 @@
 #define STATUSAREA_COLOR	0x007A7A7A
 #define GAMEAREA_COLOR		0x00138A15
 
-
 #define FALSE   0
 #define TRUE    1
 
