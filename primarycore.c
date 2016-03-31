@@ -440,20 +440,26 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
                     XTft_SetPixel(&TftInstance, i, j, BACKGROUND_COLOR);
                 }
             }
+            break;
 
+        case MSGQ_TYPE_GAMEAREA:
             //Draw game area
             for(j = CEIL; j < FLOOR; j++) {
                 for(i = LEFT_WALL; i < RIGHT_WALL; i++) {
                     XTft_SetPixel(&TftInstance, i, j, GAMEAREA_COLOR);
                 }
             }
+            break;
 
+        case MSGQ_TYPE_STATUSAREA:
             //Draw score area
             for(j = SCORE_CEIL; j < SCORE_FLOOR; j++) {
                 for(i = SCORE_LEFT_WALL; i < SCORE_RIGHT_WALL; i++) {
-                    XTft_SetPixel(&TftInstance, i, j, SCOREAREA_COLOR);
+                    XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
                 }
             }
+            break;
+
         default:
         	while(TRUE); //Should never happen. Trap runtime here.
     }
