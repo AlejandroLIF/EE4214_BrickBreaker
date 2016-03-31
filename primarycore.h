@@ -40,6 +40,7 @@ typedef enum{
     MSGQ_TYPE_BAR,
     MSGQ_TYPE_BRICK,
     MSGQ_TYPE_BRICK_COLLISION
+    MSGQ_TYPE_BACKGROUND
 } MSGQ_TYPE;
 
 static volatile int buttonInput,

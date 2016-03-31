@@ -430,6 +430,28 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
                 }
             }
             break;
+
+        case MSGQ_TYPE_BACKGROUND:
+            //Fill screen with background color
+            for(j = 0; j < 479; j++) {
+                for(i = 0; i < 639; i++) {
+                    XTft_SetPixel(&TftInstance, i, j, BACKGROUND_COLOR);
+                }
+            }
+
+            //Draw game area
+            for(j = CEIL; j < FLOOR; j++) {
+                for(i = LEFT_WALL; i < RIGHT_WALL; i++) {
+                    XTft_SetPixel(&TftInstance, i, j, GAMEAREA_COLOR);
+                }
+            }
+
+            //Draw score area
+            for(j = SCORE_CEIL; j < SCORE_FLOOR; j++) {
+                for(i = SCORE_LEFT_WALL; i < SCORE_RIGHT_WALL; i++) {
+                    XTft_SetPixel(&TftInstance, i, j, SCOREAREA_COLOR);
+                }
+            }
         default:
         	while(TRUE); //Should never happen. Trap runtime here.
     }
