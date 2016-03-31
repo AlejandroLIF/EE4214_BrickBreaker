@@ -151,7 +151,7 @@ void* thread_mainLoop(void){
         safePrint("primarycore: Welcome\r\n");
         welcome();
         while(!(buttonInput & BUTTON_CENTER));//while(!start)
-
+        sleep(SLEEPCONSTANT);
         //Running
         while(lives && !win){
             //Ready
@@ -200,7 +200,7 @@ void welcome(void){
     // ball = Ball_default; //FIXME: restore Ball_default
     ball.x = bar.x;
     ball.y = BAR_Y - DIAMETER / 2;
-    ball.d = 90;
+    ball.d = 270;
     ball.s = 10;
     ball.c = 0;
     queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
@@ -217,8 +217,6 @@ void welcome(void){
     // sem_post(&sem_brickCollisionListener);safePrint("Line 208\r\n");
     //Wait for the three branched threads to finish, regardless of the order.
     sem_wait(&sem_running);
-    // sem_wait(&sem_running);
-    // sem_wait(&sem_running);
 
     //Draw the status area
     sem_post(&sem_drawStatusArea);
@@ -254,7 +252,7 @@ void running(void){
     updateBallPosition(&ball);
     queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BALL);
     queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
-    
+
     unsigned int message[MBOX_MSG_BEGIN_COMPUTATION_SIZE];
     buildBallMessage(&ball, message);
     //Send the ball position to the secondary core to initialize collision checking
