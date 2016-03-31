@@ -151,11 +151,11 @@ void* thread_mainLoop(void){
         safePrint("primarycore: Welcome\r\n");
         welcome();
         while(!(buttonInput & BUTTON_CENTER));//while(!start)
-        sleep(SLEEPCONSTANT);
+        sleep(1000); //FIXME: hardcoded delay
         //Running
         while(lives && !win){
             //Ready
-            while(!(buttonInput & BUTTON_CENTER)){ //while(!launch)
+            while(FALSE/*!(buttonInput & BUTTON_CENTER)*/){ //while(!launch) //FIXME: QUEUES MESSAGES, BUT NOTHING IS READING THEM
                 safePrint("primarycore: ready\r\n");
                 ready();
                 sleep(SLEEPCONSTANT); //FIXME: sleep calibration
@@ -193,9 +193,12 @@ void* thread_mainLoop(void){
 }
 
 void welcome(void){
+	int drawGameAreaBackground = 1;
     lives = INITIAL_LIVES;
     bar.x = (LEFT_WALL + RIGHT_WALL)/2;
-    //FIXME: hacky fix with the bar.x
+    //FIXME: hacky fix with the bar.x1
+    queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
+    queueMsg(MSGQ_TYPE_STATUSAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_STATUSAREA);
     queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
     // ball = Ball_default; //FIXME: restore Ball_default
     ball.x = bar.x;
@@ -248,25 +251,21 @@ void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
 }
 
 void running(void){
-    const int drawGameAreaBackground = 1;
+    int drawGameAreaBackground = 1;
     updateBar(&bar, barMovementCode);
     updateBallPosition(&ball);
     queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BALL);
     queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
 
-    queueMsg(MSGQ_TYPE_BACKGROUND_GAMEAREA, &drawGameAreaBackground, MSGQ_SIZE_BACKGROUND_GAMEAREA);
+    queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
 
     unsigned int message[MBOX_MSG_BEGIN_COMPUTATION_SIZE];
     buildBallMessage(&ball, message);
     //Send the ball position to the secondary core to initialize collision checking
     XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
     //Receive brick information and draw everything on screen.
-    // sem_post(&sem_drawGameArea);
-    // sem_post(&sem_brickCollisionListener);
     sem_post(&sem_mailboxListener);
-    //Wait for the three branched threads to finish, regardless of the order.
-    // sem_wait(&sem_running);
-    // sem_wait(&sem_running);
+    //Wait for the three branched threads to finish
     sem_wait(&sem_running);
 
     //Draw the status area
@@ -287,9 +286,13 @@ void* thread_drawGameArea(void){
     unsigned int dataBuffer[3];
     while(TRUE){
         sem_wait(&sem_drawGameArea); //Wait to be signaled
-        while(readFromMessageQueue(MSGQ_TYPE_BACKGROUND, dataBuffer, MSGQ_MSGSIZE_BACKGROUND)){
+        // while(readFromMessageQueue(MSGQ_TYPE_BACKGROUND, dataBuffer, MSGQ_MSGSIZE_BACKGROUND)){
+        //     safePrint("primarycore: drawBackground\r\n");
+        //     draw(dataBuffer, MSGQ_TYPE_BACKGROUND);
+        // }
+        while(readFromMessageQueue(MSGQ_TYPE_GAMEAREA, dataBuffer, MSGQ_MSGSIZE_GAMEAREA)){
             safePrint("primarycore: drawBackground\r\n");
-            draw(dataBuffer, MSGQ_TYPE_BACKGROUND);
+            draw(dataBuffer, MSGQ_TYPE_GAMEAREA);
         }
         while(readFromMessageQueue(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR)){
             safePrint("primarycore: drawBar\r\n");
@@ -371,10 +374,9 @@ void* thread_mailboxListener(void){
 }
 
 void* thread_drawStatusArea(void){
-    int drawStatusAreaBackground = 1;
     while(TRUE){
         sem_wait(&sem_drawStatusArea);
-        queueMsg(MSGQ_TYPE_BACKGROUND_STATUSAREA, &drawStatusAreaBackground, MSGQ_SIZE_BACKGROUND_STATUSAREA);
+        draw(0, MSGQ_TYPE_STATUSAREA);
         //TODO: draw the status area
         sem_post(&sem_running); //Signal the running thread that we're done.
     }
