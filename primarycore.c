@@ -80,7 +80,7 @@ int main_prog(void){
     /*END TFT CONTROLLER INITIALIZATION*/
 
     /* BEGIN XMUTEX INITIALIZATION */
-    status = initXMutex(&Mutex);
+    status = initXMutex();
     if (status != XST_SUCCESS) {
         return XST_FAILURE;
     }
@@ -107,7 +107,6 @@ int main_prog(void){
         safePrint("Error while initializing semaphore sem_drawStatusArea!\r\n");
         while(TRUE); //Trap runtime here
     }
-    safePrint("Line 103\r\n");
     /*
     Thread priority (0 is highest priority):
     1. thread_mainLoop:
@@ -149,21 +148,24 @@ int main_prog(void){
 void* thread_mainLoop(void){
     while(TRUE){
         //Welcome
-        welcome();safePrint("Line 145\r\n");
+        safePrint("primarycore: Welcome\r\n");
+        welcome();
         while(!(buttonInput & BUTTON_CENTER));//while(!start)
 
         //Running
         while(lives && !win){
             //Ready
             while(!(buttonInput & BUTTON_CENTER)){ //while(!launch)
-                ready();safePrint("Line 152\r\n");
+                safePrint("primarycore: ready\r\n");
+                ready();
                 sleep(SLEEPCONSTANT); //FIXME: sleep calibration
             }
 
             //Running
             while(!win && !loseLife){
                 if(!paused){
-                    running();safePrint("Line 159\r\n");
+                    safePrint("primarycore: running\r\n");
+                    running();
                 }
                 else{
                     //Paused
@@ -205,24 +207,23 @@ void welcome(void){
 
     //Send a message to the secondary core, signaling a restart
     //The secondary core should reply with a draw message for every brick
-    MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART; safePrint("Line 201\r\n");
+    MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART;
     int dataBuffer[3] = {MBOX_MSG_BEGIN_COMPUTATION, 0, 0};//FIXME: this is a hacky placeholder
-    XMbox_WriteBlocking(&mailbox, (u32*)&restartMessage, MBOX_MSG_ID_SIZE);safePrint("Line 203\r\n");
+    XMbox_WriteBlocking(&mailbox, (u32*)&restartMessage, MBOX_MSG_ID_SIZE);
     XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, 3*sizeof(int));
-    safePrint("Line 205\r\n");
     //Receive brick information and draw everything on screen.
     // sem_post(&sem_drawGameArea);safePrint("Line 206\r\n");
-    sem_post(&sem_mailboxListener);safePrint("Line 207\r\n");
+    sem_post(&sem_mailboxListener);
     // sem_post(&sem_brickCollisionListener);safePrint("Line 208\r\n");
     //Wait for the three branched threads to finish, regardless of the order.
-    sem_wait(&sem_running);safePrint("Line 210\r\n");
+    sem_wait(&sem_running);
     // sem_wait(&sem_running);
     // sem_wait(&sem_running);
 
     //Draw the status area
     sem_post(&sem_drawStatusArea);
     //Wait for the drawing operation to complete.
-    sem_wait(&sem_running);safePrint("Line 218\r\n");
+    sem_wait(&sem_running);
     //TODO: draw welcome text
 }
 
@@ -251,11 +252,13 @@ void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
 void running(void){
     updateBar(&bar, barMovementCode);
     updateBallPosition(&ball);
+    queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BALL);
+    queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
+    
     unsigned int message[MBOX_MSG_BEGIN_COMPUTATION_SIZE];
     buildBallMessage(&ball, message);
     //Send the ball position to the secondary core to initialize collision checking
     XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
-    safePrint("primarycore: line 251\r\n");
     //Receive brick information and draw everything on screen.
     // sem_post(&sem_drawGameArea);
     // sem_post(&sem_brickCollisionListener);
@@ -264,7 +267,6 @@ void running(void){
     // sem_wait(&sem_running);
     // sem_wait(&sem_running);
     sem_wait(&sem_running);
-    safePrint("primarycore: line 260\r\n");
 
     //Draw the status area
     sem_post(&sem_drawStatusArea);
@@ -286,14 +288,16 @@ void* thread_drawGameArea(void){
         sem_wait(&sem_drawGameArea); //Wait to be signaled
         //TODO: draw background ("clean" the frame)
         // while(!brickUpdateComplete){
-            safePrint("Line 281\r\n");
             while(readFromMessageQueue(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR)){
+                safePrint("primarycore: drawBar\r\n");
                 draw(dataBuffer, MSGQ_TYPE_BAR);
             }
             while(readFromMessageQueue(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL)){
+                safePrint("primarycore: drawBall\r\n");
                 draw(dataBuffer, MSGQ_TYPE_BALL);
             }
             while(readFromMessageQueue(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK)){
+                safePrint("primarycore: drawBrick\r\n");
                 draw(dataBuffer, MSGQ_TYPE_BRICK);
             }
         // }
@@ -339,25 +343,22 @@ void* thread_mailboxListener(void){
     MBOX_MSG_TYPE msgType;
     unsigned int dataBuffer[3]; //FIXME: magic numbers when declaring array size
     while(TRUE){
-        sem_wait(&sem_mailboxListener);safePrint("Line 333\r\n");
+        sem_wait(&sem_mailboxListener);
         brickUpdateComplete = FALSE;
         while(!brickUpdateComplete){
             XMbox_ReadBlocking(&mailbox, (u32*)&msgType, MBOX_MSG_ID_SIZE);
             switch(msgType){
                 case MBOX_MSG_DRAW_BRICK:
-                    safePrint("Line 340\r\n");
                     XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE);
                     queueMsg(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK);
                     sem_post(&sem_drawGameArea); //TODO: fix semaphore when drawGameArea has been split into several methods
                     break;
                 case MBOX_MSG_COLLISION:
-                    safePrint("Line 346\r\n");
                     XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE);
                     queueMsg(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_MSGSIZE_BRICK_COLLISION);
                     sem_post(&sem_brickCollisionListener);
                     break;
                 case MBOX_MSG_COMPUTATION_COMPLETE:
-                    safePrint("Line 352\r\n");
                     brickUpdateComplete = TRUE;
                     break;
                 default:

@@ -27,7 +27,7 @@ int main_prog(void){
     /*END MAILBOX INITIALIZATION*/
 
     /* BEGIN XMUTEX INITIALIZATION */
-    status = initXMutex(&Mutex);
+    status = initXMutex();
     if (status != XST_SUCCESS) {
         return XST_FAILURE;
     }
@@ -135,28 +135,25 @@ void* thread_mailboxListener(void){
     MBOX_MSG_TYPE msgType;
     int i, j;
 
-    while(TRUE){safePrint("secondarycore: Line 131\r\n");
+    while(TRUE){
         XMbox_ReadBlocking(&mailbox,(u32*)&msgType, MBOX_MSG_ID_SIZE);
         switch(msgType){
             case MBOX_MSG_RESTART:
-                safePrint("secondarycore: Line 135\r\n");
                 restart();
                 break;
             case MBOX_MSG_BEGIN_COMPUTATION:
-                safePrint("secondarycore: Line 138\r\n");
                 XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_BALL_SIZE);
                 ball.x = dataBuffer[0];
                 ball.y = dataBuffer[1];
                 for(i = 0; i < COLUMNS; i++){
-                    sem_post(&sem_columnStart); safePrint("secondary core: Line 120\r\n");
+                    sem_post(&sem_columnStart);
                 }
                 break;
             case MBOX_MSG_UPDATE_GOLDEN:
-                safePrint("secondarycore: Line 148\r\n");
                 sem_post(&sem_goldenColumns);
                 break;
             default:
-                while(TRUE){safePrint("secondarycore: line 149\r\n");}; //Error! Trap runtime here. THIS SHOULD NOT HAPPEN
+                while(TRUE){safePrint("secondary core: mailboxlistener error\r\n");}; //Error! Trap runtime here. THIS SHOULD NOT HAPPEN
         }
     }
 }
@@ -191,9 +188,7 @@ void* thread_goldenSelector(void){
     i = 0;
     while(TRUE){
         //Randomly select amongst the columns which still have bricks left.
-        safePrint("secondarycore: Line 160\r\n");
         if(bricksLeft[i] && makeGolden()){
-            safePrint("secondarycore: Line 162\r\n");
             sem_wait(&sem_goldenColumns);
             *(goldenPointers[nextPointer]) = FALSE;
             goldenPointers[nextPointer] = &goldenColumn[i];
@@ -210,7 +205,6 @@ void* thread_updateComplete(void){
     int i;
     while(TRUE){
         for(i = 0; i < COLUMNS; i++){
-            safePrint("secondarycore: Line 179\r\n");
             sem_wait(&sem_updateComplete);
         }
         XMbox_WriteBlocking(&mailbox, (u32*)&computationComplete, MBOX_MSG_ID_SIZE);
@@ -226,11 +220,10 @@ void columnCode(const int colID){
     Brick b;
     CollisionCode collision;
     int dataBuffer[4];
-    while(TRUE){safePrint("secondarycore: Line 196\r\n");
+    while(TRUE){
         sem_wait(&sem_columnStart);
         if(bricksLeft[colID]){
             for(i = 0; i < ROWS; i++){
-                safePrint("secondarycore: Line 234\r\n");
                 if(activeBricks[colID][i]){
                     //TODO: send resulting CollisionCode to primarycore
                 	b = toBrick(colID, i);
