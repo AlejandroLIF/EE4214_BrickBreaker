@@ -264,7 +264,7 @@ void running(void){
     }
 
     //Check collision with bar
-    collisionWallBar = checkCollideBar(&ball);
+    collisionWallBar = checkCollideBar(&ball, &bar);
     if(collisionWallBar != COLLIDE_NONE) {
         updateBallDirection(&ball, collisionWallBar);
     }
