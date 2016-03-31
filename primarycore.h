@@ -56,7 +56,6 @@ static unsigned int lives;
 static unsigned int score;
 
 static XTft TftInstance;
-static XMutex Mutex;
 
 //pthread pointers
 static pthread_t pthread_mainLoop,

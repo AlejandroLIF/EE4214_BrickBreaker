@@ -227,11 +227,10 @@ void columnCode(const int colID){
     CollisionCode collision;
     int dataBuffer[4];
     while(TRUE){safePrint("secondarycore: Line 196\r\n");
-        xil_printf("Column: %d\r\n", colID);
         sem_wait(&sem_columnStart);
         if(bricksLeft[colID]){
             for(i = 0; i < ROWS; i++){
-                xil_printf("Column: %d Brick: %d\r\n", colID, i);
+                safePrint("secondarycore: Line 234\r\n");
                 if(activeBricks[colID][i]){
                     //TODO: send resulting CollisionCode to primarycore
                 	b = toBrick(colID, i);
@@ -295,11 +294,4 @@ void* thread_col8(void){
 void* thread_col9(void){
     columnCode(9);
     return 0;
-}
-
-//FIXME This method is implemented in both primary and secondary which seems redundant, perhaps put in xmutexConfig
-void safePrint(const char *ptr) {
-    XMutex_Lock(&Mutex, MUTEX_NUM);
-    print(*ptr);
-    XMutex_Unlock(&Mutex, MUTEX_NUM);
 }

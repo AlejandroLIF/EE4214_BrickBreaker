@@ -58,7 +58,7 @@ int main_prog(void){
     // Initialise the PB instance
     status = XGpio_Initialize(&gpPB, XPAR_GPIO_0_DEVICE_ID);
     if (status == XST_DEVICE_NOT_FOUND) {
-        xil_printf("ERROR initializing XGpio: Device not found");
+        safePrint("ERROR initializing XGpio: Device not found");
     }
     // set PB gpio direction to input.
     XGpio_SetDataDirection(&gpPB, 1, 0x000000FF);
@@ -446,12 +446,4 @@ void gameOver(void){
 //Win method should display "Win" text and prompt the user to press a key to restart
 void gameWin(void){
 
-}
-
-//FIXME This method is implemented in both primary and secondary which seems redundant, perhaps put in xmutexConfig
-//FIXME Should probably be changed to accept a mutex pointer instead of using some kind of global
-void safePrint(const char *ptr) {
-    XMutex_Lock(&Mutex, MUTEX_NUM);
-    print(*ptr);
-    XMutex_Unlock(&Mutex, MUTEX_NUM);
 }

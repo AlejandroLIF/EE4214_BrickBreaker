@@ -3,7 +3,6 @@
 
 #include "xmk.h"
 #include <xparameters.h>
-#include "xmbox.h"
 #include "xstatus.h"
 #include <pthread.h>
 #include <errno.h>
@@ -46,7 +45,6 @@ static sem_t sem_goldenColumns,
              sem_columnWait;
 
 static Ball ball;
-static XMutex Mutex;
 
 static pthread_t pthread_mailboxListener,
                  pthread_updateComplete,

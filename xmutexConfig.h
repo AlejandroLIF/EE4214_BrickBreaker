@@ -11,6 +11,8 @@
 #define XST_SUCCESS 0L
 #define XST_FAILURE 1L
 
-int initXMutex(XMutex* Mutex);
+static XMutex Mutex;
 
+int initXMutex(XMutex* Mutex);
+void safePrint(const char *ptr);
 #endif
