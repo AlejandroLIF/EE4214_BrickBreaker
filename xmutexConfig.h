@@ -2,7 +2,7 @@
 #define XMUTEXCONFIG_H
 
 #include "xmutex.h"
-#include <xparameters.h>
+#include "xparameters.h"
 
 // declare the Hardware Mutex
 #define MUTEX_DEVICE_ID XPAR_MUTEX_0_IF_1_DEVICE_ID
@@ -13,6 +13,6 @@
 
 static XMutex Mutex;
 
-int initXMutex(XMutex* Mutex);
+int initXMutex();
 void safePrint(const char *ptr);
 #endif
