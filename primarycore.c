@@ -254,6 +254,20 @@ void running(void){
     updateBallPosition(&ball);
     queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BALL);
     queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
+
+    CollisionCode collisionWallBar;
+
+    //Check collision with walls
+    collisionWallBar = checkCollideWall(&ball);
+    if(collisionWallBar != COLLIDE_NONE) {
+        updateBallDirection(&ball, collisionWallBar);
+    }
+
+    //Check collision with bar
+    collisionWallBar = checkCollideBar(&ball);
+    if(collisionWallBar != COLLIDE_NONE) {
+        updateBallDirection(&ball, collisionWallBar);
+    }
     
     unsigned int message[MBOX_MSG_BEGIN_COMPUTATION_SIZE];
     buildBallMessage(&ball, message);
