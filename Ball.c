@@ -60,15 +60,15 @@ void updateBallPosition(Ball* ball){
     int new_x = speed * SIN_TABLE[ (dir+90) % 360 ] + old_x;
     int new_y = speed * SIN_TABLE[ dir ] + old_y;
 
-    if(new_x > RIGHT_WALL - DIAMETER/2) {
+    if(new_x > RIGHT_WALL - DIAMETER/2 - 1) {
     	new_x = RIGHT_WALL - DIAMETER/2;
-    } else if(new_x < LEFT_WALL + DIAMETER/2) {
+    } else if(new_x < LEFT_WALL + DIAMETER/2 + 1) {
     	new_x = LEFT_WALL + DIAMETER/2;
     }
 
-    if(new_y < CEIL + DIAMETER/2) {
+    if(new_y < CEIL + DIAMETER/2 + 1) {
     	new_y = CEIL + DIAMETER/2;
-    } else if(new_y > FLOOR - DIAMETER/2) {
+    } else if(new_y > FLOOR - DIAMETER/2 - 1) {
     	new_y = FLOOR - DIAMETER/2;
     }
 
