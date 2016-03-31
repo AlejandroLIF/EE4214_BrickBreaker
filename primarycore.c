@@ -3,6 +3,7 @@
 XGpio gpPB; //PB device instance.
 Bar bar = {0, FLOOR - 10 - 3};
 Ball ball;
+unsigned int cyclesElapsed;
 
 static void gpPBIntHandler(void *arg)
 {
@@ -199,11 +200,14 @@ void welcome(void){
     //FIXME: hacky fix with the bar.x1
 //    queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
 //    queueMsg(MSGQ_TYPE_STATUSAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_STATUSAREA);
+
+    cyclesElapsed = 0;
+
     queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
     // ball = Ball_default; //FIXME: restore Ball_default
     ball.x = bar.x;
     ball.y = BAR_Y - DIAMETER / 2;
-    ball.d = 270;
+    ball.d = 340;
     ball.s = 10;
     ball.c = 0;
     queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
@@ -256,26 +260,25 @@ void running(void){
     updateBallPosition(&ball);
     queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BALL);
     queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
-
-//    queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
-
-    CollisionCode collisionWallBar;
+    //queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
 
     //Check collision with walls
-    collisionWallBar = checkCollideWall(&ball);
-    if(collisionWallBar != COLLIDE_NONE) {
-        updateBallDirection(&ball, collisionWallBar);
-    }
+    updateBallDirection(&ball, checkCollideWall(&ball));
 
     //Check collision with bar
-    collisionWallBar = checkCollideBar(&ball, &bar);
-    if(collisionWallBar != COLLIDE_NONE) {
-        updateBallDirection(&ball, collisionWallBar);
-    }
+    updateBallDirection(&ball, checkCollideBar(&ball, &bar));
+
     unsigned int message[MBOX_MSG_BEGIN_COMPUTATION_SIZE];
     buildBallMessage(&ball, message);
     //Send the ball position to the secondary core to initialize collision checking
     XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
+    if(cyclesElapsed++ >= GOLDEN_COLUMN_CHANGE_CONSTANT){
+        safePrint("Update golden!\r\n");
+        cyclesElapsed = 0;
+        message[0] = MBOX_MSG_UPDATE_GOLDEN;
+        XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_UPDATE_GOLDEN_SIZE);
+        XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_UPDATE_GOLDEN_SIZE);
+    }
     //Receive brick information and draw everything on screen.
     sem_post(&sem_mailboxListener);
     //Wait for the three branched threads to finish

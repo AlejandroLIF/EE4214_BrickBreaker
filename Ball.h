@@ -13,11 +13,11 @@
 #define MIN_SPEED	50
 
 struct Ball_s{
-    	int x; /*horizontal anchor*/
-    	int y; /*vertical anchor*/
-    	int d; /*direction*/
-    	int s; /*speed*/
-    	int c; /*color*/
+    	unsigned int x; /*horizontal anchor*/
+    	unsigned int y; /*vertical anchor*/
+    	unsigned int d; /*direction*/
+    	unsigned int s; /*speed*/
+    	unsigned int c; /*color*/
 };
 typedef struct Ball_s Ball;
 

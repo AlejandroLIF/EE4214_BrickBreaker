@@ -23,6 +23,7 @@
 
 #define INITIAL_LIVES       3
 #define SLEEPCONSTANT       0
+#define GOLDEN_COLUMN_CHANGE_CONSTANT   125
 #define SEM_SHARED          1
 #define SEM_PRIVATE         0
 #define SEM_AVAILABLE       1
@@ -54,6 +55,8 @@ static volatile int buttonInput,
                     loseLife,
                     barMovementCode,
                     brickUpdateComplete;
+
+extern unsigned int cyclesElapsed;
 
 //Main game component (Ball and Bar) declarations.
 extern Bar bar;

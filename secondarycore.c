@@ -170,6 +170,9 @@ void restart(void){
     }
 
     columnsLeft = COLUMNS;
+    for(i = 0; i < MAX_GOLDEN_COLUMNS; i++){
+        sem_post(&sem_goldenColumns);
+    }
 }
 
 static inline int makeGolden(){

@@ -68,8 +68,8 @@ void updateBallPosition(Ball* ball){
 
     if(new_y < CEIL + DIAMETER/2 + 1) {
     	new_y = CEIL + DIAMETER/2;
-    } else if(new_y > FLOOR - DIAMETER/2 - 1) {
-    	new_y = FLOOR - DIAMETER/2;
+    } else if(new_y >= FLOOR - DIAMETER/2) {
+    	new_y = FLOOR - DIAMETER/2 - 1;
     }
 
     ball->x = new_x;

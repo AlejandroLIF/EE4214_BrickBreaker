@@ -61,7 +61,7 @@ CollisionCode checkCollideWall(Ball* ball) {
 		return COLLIDE_WALL_CEIL;
 	}
 
-	if(ball->y >= FLOOR + DIAMETER/2) {
+	if(ball->y >= FLOOR - DIAMETER/2 - 1) {
 		return COLLIDE_WALL_FLOOR;
 	}
 	return COLLIDE_NONE;
@@ -203,11 +203,11 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 			} else {
 				ball->s = MIN_SPEED;
 			}
-			ball->d = (180 - ball->d)%360;
+			ball->d = 360 - ball->d;
 			break;
 
 		case COLLIDE_BAR_N :
-			ball->d = (180 - ball->d)%360;
+			ball->d = 360 - ball->d;
 			break;
 
 		case COLLIDE_BAR_SPLUS :
@@ -216,27 +216,21 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 			} else {
 				ball->s = MAX_SPEED;
 			}
-			ball->d = (180 - ball->d)%360;
+			ball->d = 360 - ball->d;
 			break;
 
 	    case COLLIDE_BAR_APLUS :
 		    ball->d = (195 - ball->d)%360;
 		    break;
-
 		case COLLIDE_WALL_LEFT :
-			ball->d = (180 - ball->d)%360;
-			break;
-
+            ball->d = ball->d > 180 ? 540 - ball->d : ((540 - ball->d) % 360);
+            break;
 		case COLLIDE_WALL_RIGHT :
-			ball->d = (180 - ball->d)%360;
-			break;
-
+            ball->d = ball->d > 90 ? 540 - ball->d : ((540 - ball->d) % 360);
+            break;
 		case COLLIDE_WALL_CEIL :
-			ball->d = (180 - ball->d)%360;
-			break;
-
 		case COLLIDE_WALL_FLOOR :
-			ball->d = (180 - ball->d)%360;
+			ball->d = 360 - ball->d;
 			break;
 
 		default:

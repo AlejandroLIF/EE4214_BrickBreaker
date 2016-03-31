@@ -48,8 +48,6 @@ void updateBar(Bar* bar, BarMovementCode movementCode) {
 		break;
 
 		case BAR_NO_MOVEMENT :
-		break;
-
 		default :
 		break;
 	}
