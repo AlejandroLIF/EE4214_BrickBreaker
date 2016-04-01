@@ -34,7 +34,7 @@ typedef enum{
     MSGQ_MSGSIZE_BAR =              3 * sizeof(int),
     MSGQ_MSGSIZE_BRICK =            3 * sizeof(int),
     MSGQ_MSGSIZE_BACKGROUND =       1 * sizeof(int),
-    MSGQ_MSGSIZE_BRICK_COLLISION =  2 * sizeof(int),
+    MSGQ_MSGSIZE_BRICK_COLLISION =  1 * sizeof(int),
     MSGQ_MSGSIZE_GAMEAREA =         1 * sizeof(int),
     MSGQ_MSGSIZE_STATUSAREA =       1 * sizeof(int)
 } MSGQ_MSGSIZE;
