@@ -215,9 +215,10 @@ void welcome(void){
     //Send a message to the secondary core, signaling a restart
     //The secondary core should reply with a draw message for every brick
     MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART;
-    int dataBuffer[3] = {MBOX_MSG_BEGIN_COMPUTATION, 0, 0};//FIXME: this is a hacky placeholder
+    int dataBuffer[MBOX_MSG_BEGIN_COMPUTATION_SIZE];
+    buildBallMessage(&ball, dataBuffer);
     XMbox_WriteBlocking(&mailbox, (u32*)&restartMessage, MBOX_MSG_ID_SIZE);
-    XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, 3*sizeof(int));
+    XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
     //Receive brick information and draw everything on screen.
     // sem_post(&sem_drawGameArea);safePrint("Line 206\r\n");
     sem_post(&sem_mailboxListener);
