@@ -6,7 +6,6 @@
 #define BRICK_SPACING   5
 
 #define BRICK_COLUMN_HEIGHT 8
-
 #define BRICK_SIZE      12;
 
 struct Brick_s{
