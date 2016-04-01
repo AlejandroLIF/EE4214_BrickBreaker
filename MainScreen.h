@@ -14,6 +14,11 @@
 #define STATUSAREA_COLOR	0x007A7A7A
 #define GAMEAREA_COLOR		0x00138A15
 
+#define BRICK_COLOR_DEFAULT     0x0000FF00 //Green
+#define BRICK_COLOR_ACTIVE      0x00FFFF00 //Yellow
+
+#define COLOR_NONE  0
+
 #define FALSE   0
 #define TRUE    1
 

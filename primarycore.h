@@ -31,7 +31,7 @@
 
 typedef enum{
     MSGQ_MSGSIZE_BALL =             3 * sizeof(int),
-    MSGQ_MSGSIZE_BAR =              2 * sizeof(int),
+    MSGQ_MSGSIZE_BAR =              3 * sizeof(int),
     MSGQ_MSGSIZE_BRICK =            3 * sizeof(int),
     MSGQ_MSGSIZE_BACKGROUND =       1 * sizeof(int),
     MSGQ_MSGSIZE_BRICK_COLLISION =  2 * sizeof(int),
@@ -90,8 +90,8 @@ static sem_t sem_running,
  void gameWin(void);
  int readFromMessageQueue(const MSGQ_TYPE id, void* dataBuffer, const MSGQ_MSGSIZE size);
  void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType);
- void buildBallMessage(Ball* ball, unsigned int* message);
  void safePrint(const char *ptr);
+ inline void buildBallMessage(Ball* ball, unsigned int* message);
 
 //Firmware entry point
 int main(void);

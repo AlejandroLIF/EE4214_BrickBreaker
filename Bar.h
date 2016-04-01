@@ -20,6 +20,7 @@
 struct Bar_s{
     int x; /*horizontal anchor*/
     const int y; /*vertical anchor*/
+    int c; /*Draw or erase boolean "color"*/
 };
 typedef struct Bar_s Bar;
 

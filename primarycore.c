@@ -198,8 +198,8 @@ void welcome(void){
     lives = INITIAL_LIVES;
     bar.x = (LEFT_WALL + RIGHT_WALL)/2;
     //FIXME: hacky fix with the bar.x1
-//    queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
-//    queueMsg(MSGQ_TYPE_STATUSAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_STATUSAREA);
+   queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
+   queueMsg(MSGQ_TYPE_STATUSAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_STATUSAREA);
 
     cyclesElapsed = 0;
 
@@ -233,10 +233,19 @@ void welcome(void){
 }
 
 void ready(void){
+    //Erase the bar
+    bar.c = GAMEAREA_COLOR;
+    queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
+    bar.c = COLOR_NONE;
+    //Erase the ball
+    ball.c = GAMEAREA_COLOR;
+    queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
+    ball.c = COLOR_NONE;
+
     updateBar(&bar, barMovementCode);
     followBar(&ball, &bar);
     //FIXME: clear previous bar and ball before redrawing.
-    queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BALL);
+    queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
     queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
 }
 
@@ -256,9 +265,18 @@ void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
 
 void running(void){
     int drawGameAreaBackground = 1;
+    //Erase the bar
+    bar.c = GAMEAREA_COLOR;
+    queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
+    bar.c = COLOR_NONE;
+    //Erase the ball
+    ball.c = GAMEAREA_COLOR;
+    queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
+    ball.c = COLOR_NONE;
+
     updateBar(&bar, barMovementCode);
     updateBallPosition(&ball);
-    queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BALL);
+    queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
     queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
     //queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
 
@@ -290,7 +308,7 @@ void running(void){
     sem_wait(&sem_running);
 }
 
-void buildBallMessage(Ball* ball, unsigned int* message){
+inline void buildBallMessage(Ball* ball, unsigned int* message){
     message[0] = MBOX_MSG_BEGIN_COMPUTATION;
     message[1] = ball->x;
     message[2] = ball->y;
@@ -398,13 +416,13 @@ void* thread_drawStatusArea(void){
     }
 }
 
-//TODO: implement draw, should only draw the object
 //FIXME: For the drawing of the bar, replace else if chain with separate for loops for each section (or other fix)
 void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
     int i, j;
     int x, y, c;
     switch(msgType){
         case MSGQ_TYPE_BRICK:
+            //FIXME: hardcoded indexes
             x = dataBuffer[0];
             y = dataBuffer[1];
             c = dataBuffer[2];
@@ -419,21 +437,23 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
             break;
 
         case MSGQ_TYPE_BAR:
+            //FIXME: hardcoded indexes
             x = dataBuffer[0];
             y = dataBuffer[1];
+            c = dataBuffer[2];
 
             for(j = y - BAR_HEIGHT/2; j < y + BAR_HEIGHT/2; j++) {
                 for(i = 0; i < BAR_WIDTH; i++) {
                     if(i < A_REGION_WIDTH) {
-                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, A_REGION_COLOR);
+                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : A_REGION_COLOR);
                     } else if(i < A_REGION_WIDTH + S_REGION_WIDTH) {
-                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, S_REGION_COLOR);
+                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : S_REGION_COLOR);
                     } else if(i < A_REGION_WIDTH + S_REGION_WIDTH + N_REGION_WIDTH) {
-                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, N_REGION_COLOR);
+                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : N_REGION_COLOR);
                     } else if(i < A_REGION_WIDTH + 2*S_REGION_WIDTH + N_REGION_WIDTH) {
-                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, S_REGION_COLOR);
+                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : S_REGION_COLOR);
                     }else{
-                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, A_REGION_COLOR);
+                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : A_REGION_COLOR);
                     }
                 }
             }
@@ -441,13 +461,14 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
             break;
 
         case MSGQ_TYPE_BALL:
+            //FIXME: hardcoded indexes
             x = dataBuffer[0];
             y = dataBuffer[1];
-
+            c = dataBuffer[2];
             for(j = 0; j < DIAMETER; j++) {
                 for (i = 0; i < DIAMETER; i++) {
                     if(BALL_MASK[j][i] == 0xFFFFFFFF) {
-                        XTft_SetPixel(&TftInstance, x - DIAMETER/2 + i, y - DIAMETER/2 + j, BALL_COLOR);
+                        XTft_SetPixel(&TftInstance, x - DIAMETER/2 + i, y - DIAMETER/2 + j, c ? c : BALL_COLOR);
                     }
                 }
             }

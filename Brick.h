@@ -7,10 +7,6 @@
 
 #define BRICK_COLUMN_HEIGHT 8
 
-#define BRICK_COLOR_DEFAULT     0x0000FF00 //Green
-#define BRICK_COLOR_ACTIVE      0x00FFFF00 //Yellow
-#define BRICK_COLOR_DESTROYED   0x00000000 //No color
-
 #define BRICK_SIZE      12;
 
 struct Brick_s{
