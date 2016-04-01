@@ -228,14 +228,19 @@ void columnCode(const int colID){
         if(bricksLeft[colID]){
             for(i = 0; i < ROWS; i++){
                 if(activeBricks[colID][i]){
-                    //TODO: send resulting CollisionCode to primarycore
-                	b = toBrick(colID, i);
-//                    collision = checkCollideBrick(&ball, &b);
+                    collision = checkCollideBrick(&ball, &b);
                     dataBuffer[0] = MBOX_MSG_DRAW_BRICK;
                     dataBuffer[1] = x;
                     dataBuffer[2] = (int)(CEIL + BRICK_SPACING * (i+1) + BRICK_HEIGHT * (i + 0.5));
                     dataBuffer[3] = goldenColumn[colID] ? BRICK_COLOR_ACTIVE : BRICK_COLOR_DEFAULT;
                     XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE + MBOX_MSG_ID_SIZE);
+										//TODO: not check collision with all bricks (unnecessary)
+										//Send collision code to primarycore
+										b = toBrick(colID, i);
+										dataBuffer[0] = MBOX_MSG_COLLISION;
+										dataBuffer[1] = checkCollideBrick(&ball, &b);
+										XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE + MBOX_MSG_ID_SIZE);
+
                 }
             }
         }
