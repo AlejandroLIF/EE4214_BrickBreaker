@@ -52,10 +52,11 @@ const double SIN_TABLE[360] = {
                             };
 
 void updateBallPosition(Ball* ball){
-    int speed = ball->s;
-    int dir = ball->d;
     int old_x = ball->x;
     int old_y = ball->y;
+    int color = ball->c;
+    int dir = ball->d;
+    int speed = ball->s;
 
     int new_x = speed * SIN_TABLE[ (dir+90) % 360 ] + old_x;
     int new_y = speed * SIN_TABLE[ dir ] + old_y;

@@ -15,7 +15,7 @@
 struct Ball_s{
     	unsigned int x; /*horizontal anchor*/
     	unsigned int y; /*vertical anchor*/
-        unsigned int c; /*color*/
+      unsigned int c; /*color*/
     	unsigned int d; /*direction*/
     	unsigned int s; /*speed*/
 };
