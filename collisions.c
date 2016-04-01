@@ -79,22 +79,22 @@ CollisionCode checkCollideWall(Ball* ball) {
 //     May have to change some < or > to <= or >= for the case to be included
 CollisionCode checkCollideBrick(Ball* ball, Brick* brick) {
 	//Check proximity of ball to brick
-	if(ball->x < brick->x - BRICK_WIDTH/2) {
+	if(ball->x < brick->x - BRICK_WIDTH/2 - DIAMETER/2) {
 		//Ball is to the left of brick
 		return COLLIDE_NONE;
 	}
 
-	if(ball->x > brick->x + BRICK_WIDTH/2) {
+	if(ball->x > brick->x + BRICK_WIDTH/2 + DIAMETER/2) {
 		//Ball is to the right of brick
 		return COLLIDE_NONE;
 	}
 
-	if(ball->y < brick->y - BRICK_HEIGHT/2) {
+	if(ball->y < brick->y - BRICK_HEIGHT/2 - DIAMETER/2) {
 		//Ball is above brick
 		return COLLIDE_NONE;
 	}
 
-	if(ball->y > brick->y + BRICK_HEIGHT/2) {
+	if(ball->y > brick->y + BRICK_HEIGHT/2 + DIAMETER/2) {
 		//Ball is below brick
 		return COLLIDE_NONE;
 	}
@@ -232,7 +232,7 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 		case COLLIDE_WALL_FLOOR :
 			ball->d = 360 - ball->d;
 			break;
-
+      //TODO: Implement brick collision bounce
 		default:
 			break;
 
