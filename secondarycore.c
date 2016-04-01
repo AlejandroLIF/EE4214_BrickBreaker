@@ -237,9 +237,13 @@ void columnCode(const int colID){
 										//TODO: not check collision with all bricks (unnecessary)
 										//Send collision code to primarycore
 										b = toBrick(colID, i);
-										dataBuffer[0] = MBOX_MSG_COLLISION;
-										dataBuffer[1] = checkCollideBrick(&ball, &b);
-										XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE + MBOX_MSG_ID_SIZE);
+										collision = checkCollideBrick(&ball, &b);
+										if(collision) {
+                        dataBuffer[0] = MBOX_MSG_COLLISION;
+                        dataBuffer[1] = checkCollideBrick(&ball, &b);
+                        XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE + MBOX_MSG_ID_SIZE);
+										}
+
 
                 }
             }
