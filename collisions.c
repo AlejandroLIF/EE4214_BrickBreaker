@@ -225,7 +225,7 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 		case COLLIDE_WALL_LEFT :
             ball->d = ball->d > 180 ? 540 - ball->d : ((540 - ball->d) % 360);
             break;
-		case COLLIDE_WALL_RIGHT :
+		case COLLIDE_WALL_RIGHT : //TODO: These cases are the same?
             ball->d = ball->d > 90 ? 540 - ball->d : ((540 - ball->d) % 360);
             break;
 		case COLLIDE_WALL_CEIL :
@@ -235,6 +235,7 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
       //TODO: Implement brick collision bounce
       case COLLIDE_BRICK_UL :
           //Collide upper left corner
+          ball->d = ball->d > 270 ? 630 - ball->d : 270 - ball->d;
           break;
 
       case COLLIDE_BRICK_UC :
@@ -244,6 +245,7 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 
       case COLLIDE_BRICK_UR :
           //Collide upper right corner
+          ball->d = ball->d > 90 ? 450 - ball->d : 90 - ball->d;
           break;
 
       case COLLIDE_BRICK_CL :
@@ -258,6 +260,7 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 
       case COLLIDE_BRICK_BL :
           //Collide bottom left corner
+          ball->d = ball->d > 90 ? 450 - ball->d : 90 - ball->d;
           break;
 
       case COLLIDE_BRICK_BC :
@@ -267,6 +270,7 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 
       case COLLIDE_BRICK_BR :
           //Collide bottom right corner
+          ball->d = ball->d > 270 ? 630 - ball->d : 270 - ball->d;
           break;
 
 		default:
