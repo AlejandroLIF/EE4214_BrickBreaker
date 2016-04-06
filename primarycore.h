@@ -63,6 +63,7 @@ extern Bar bar;
 extern Ball ball;
 static unsigned int lives;
 static unsigned int score;
+static volatile unsigned int hasCollided;
 
 static XTft TftInstance;
 

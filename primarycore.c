@@ -219,6 +219,7 @@ void welcome(void){
     buildBallMessage(&ball, dataBuffer);
     XMbox_WriteBlocking(&mailbox, (u32*)&restartMessage, MBOX_MSG_ID_SIZE);
     XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
+    hasCollided = FALSE;
     //Receive brick information and draw everything on screen.
     // sem_post(&sem_drawGameArea);safePrint("Line 206\r\n");
     sem_post(&sem_mailboxListener);
@@ -290,6 +291,7 @@ void running(void){
     buildBallMessage(&ball, message);
     //Send the ball position to the secondary core to initialize collision checking
     XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
+    hasCollided = FALSE;
     if(cyclesElapsed++ >= GOLDEN_COLUMN_CHANGE_CONSTANT){
         safePrint("Update golden!\r\n");
         cyclesElapsed = 0;
@@ -371,7 +373,10 @@ void* thread_brickCollisionListener(void){
 //                }
                 safePrint("Brick collision!\r\n");
                 safePrint(dataBuffer[0] + '0');
-                updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
+                if(!hasCollided){
+                    updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
+                    hasCollided = TRUE;
+                }
             }
         // sem_post(&sem_running); //Signal the running thread that we're done.
     }
