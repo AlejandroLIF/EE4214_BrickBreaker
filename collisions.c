@@ -233,6 +233,42 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 			ball->d = 360 - ball->d;
 			break;
       //TODO: Implement brick collision bounce
+      case COLLIDE_BRICK_UL :
+          //Collide upper left corner
+          break;
+
+      case COLLIDE_BRICK_UC :
+          //Collide upper center
+          ball->d = 360 - ball->d;
+          break;
+
+      case COLLIDE_BRICK_UR :
+          //Collide upper right corner
+          break;
+
+      case COLLIDE_BRICK_CL :
+          //Collide center left
+          ball->d = ball->d > 180 ? 540 - ball->d : ((540 - ball->d) % 360);
+          break;
+
+      case COLLIDE_BRICK_CR :
+          //Collide center right
+          ball->d = ball->d > 90 ? 540 - ball->d : ((540 - ball->d) % 360);
+          break;
+
+      case COLLIDE_BRICK_BL :
+          //Collide bottom left corner
+          break;
+
+      case COLLIDE_BRICK_BC :
+          //Collide bottom center
+          ball->d = 360 - ball->d;
+          break;
+
+      case COLLIDE_BRICK_BR :
+          //Collide bottom right corner
+          break;
+
 		default:
 			break;
 
