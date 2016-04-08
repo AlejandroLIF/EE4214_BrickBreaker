@@ -564,7 +564,7 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
                 XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
             }
         }
-        XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL, SCORE_CEIL);
+        XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL + SCORE_TEXT_OFFSET/4, SCORE_CEIL + SCORE_TEXT_OFFSET/4);
         XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
 
         //FIXME: Need correct offset between score text and score value
@@ -572,9 +572,13 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
 		dscore = (score % 100) / 10;
 		uscore = score % 10;
 
-        XTft_Write(&TftInstance, "Score");
-        
-        XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL, SCORE_CEIL + SCORE_TEXT_OFFSET);
+        XTft_Write(&TftInstance, 'S');
+        XTft_Write(&TftInstance, 'c');
+        XTft_Write(&TftInstance, 'o');
+        XTft_Write(&TftInstance, 'r');
+        XTft_Write(&TftInstance, 'e');
+
+        XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL + SCORE_TEXT_OFFSET, SCORE_CEIL + SCORE_TEXT_OFFSET);
 
 		XTft_Write(&TftInstance, intToChar(hscore));
 		XTft_Write(&TftInstance, intToChar(dscore));
@@ -593,9 +597,17 @@ void gameOver(void){
     safePrint("Game over!\r\n");
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2);
     XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
-    XTft_Write(&TftInstance, "Game Over");
+    XTft_Write(&TftInstance, 'G');
+    XTft_Write(&TftInstance, 'a');
+    XTft_Write(&TftInstance, 'm');
+    XTft_Write(&TftInstance, 'e');
+    XTft_Write(&TftInstance, ' ');
+    XTft_Write(&TftInstance, 'O');
+    XTft_Write(&TftInstance, 'v');
+    XTft_Write(&TftInstance, 'e');
+    XTft_Write(&TftInstance, 'r');
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2 + 20);
-    XTft_Write(&TftInstance, "Press any key to restart");
+    //XTft_Write(&TftInstance, "Press any key to restart");
 }
 
 //TODO: implement win
@@ -604,9 +616,9 @@ void gameWin(void){
     safePrint("Victory!\r\n");
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2);
     XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
-    XTft_Write(&TftInstance, "Victory");
+    XTft_Write(&TftInstance, 'V');
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2 + 20);
-    XTft_Write(&TftInstance, "Press any key to restart");
+    //XTft_Write(&TftInstance, "Press any key to restart");
 }
 
 unsigned char intToChar(int n){
