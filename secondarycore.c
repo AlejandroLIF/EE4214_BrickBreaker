@@ -1,10 +1,10 @@
 #include "secondarycore.h"
 
 int main(void){
-	xilkernel_init();
-	xmk_add_static_thread(main_prog,0);
-	xilkernel_start();
-	xilkernel_main ();
+    xilkernel_init();
+    xmk_add_static_thread(main_prog,0);
+    xilkernel_start();
+    xilkernel_main ();
 }
 
 int main_prog(void){
@@ -139,27 +139,27 @@ void* thread_mailboxListener(void){
         XMbox_ReadBlocking(&mailbox,(u32*)&msgType, MBOX_MSG_ID_SIZE);
         switch(msgType){
             case MBOX_MSG_RESTART:
-                restart();
-                break;
+            restart();
+            break;
             case MBOX_MSG_BEGIN_COMPUTATION:
-                XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_BALL_SIZE);
-                ball.x = dataBuffer[0];
-                ball.y = dataBuffer[1];
-                for(i = 0; i < COLUMNS; i++){
-                    sem_post(&sem_columnStart);
-                }
-                break;
+            XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_BALL_SIZE);
+            ball.x = dataBuffer[0];
+            ball.y = dataBuffer[1];
+            for(i = 0; i < COLUMNS; i++){
+                sem_post(&sem_columnStart);
+            }
+            break;
             case MBOX_MSG_UPDATE_GOLDEN:
-                sem_post(&sem_goldenColumns);
-                break;
+            sem_post(&sem_goldenColumns);
+            break;
             default:
-                while(TRUE){safePrint("secondary core: mailboxlistener error\r\n");}; //Error! Trap runtime here. THIS SHOULD NOT HAPPEN
+            while(TRUE){safePrint("secondary core: mailboxlistener error\r\n");}; //Error! Trap runtime here. THIS SHOULD NOT HAPPEN
         }
     }
 }
 
 void restart(void){
-	int i, j;
+    int i, j;
     //Reset the activeBricks array
     for(i = 0; i < COLUMNS; i++){
         for(j = 0; j < ROWS; j++){
@@ -176,7 +176,7 @@ void restart(void){
 }
 
 static inline int makeGolden(){
-	return (rand() % COLUMNS) < MAX_GOLDEN_COLUMNS;
+    return (rand() % COLUMNS) < MAX_GOLDEN_COLUMNS;
 }
 
 void* thread_goldenSelector(void){
@@ -205,14 +205,23 @@ void* thread_goldenSelector(void){
 //Waits for every column thread to signal that it's done to send
 void* thread_updateComplete(void){
     const MBOX_MSG_TYPE computationComplete = MBOX_MSG_COMPUTATION_COMPLETE;
+    const MBOX_MSG_TYPE victory = MBOX_MSG_VICTORY;
     int i;
     while(TRUE){
         for(i = 0; i < COLUMNS; i++){
             sem_wait(&sem_updateComplete);
         }
-        XMbox_WriteBlocking(&mailbox, (u32*)&computationComplete, MBOX_MSG_ID_SIZE);
         for(i = 0; i < COLUMNS; i++){
             sem_post(&sem_columnWait);
+        }
+        for(i = 0; i < COLUMNS; i++){
+            if(bricksLeft[i]) break;
+        }
+        if(i != COLUMNS){
+            XMbox_WriteBlocking(&mailbox, (u32*)&computationComplete, MBOX_MSG_ID_SIZE);
+        }
+        else{
+            XMbox_WriteBlocking(&mailbox, (u32*)&victory, MBOX_MSG_VICTORY_SIZE);
         }
     }
 }
@@ -231,16 +240,26 @@ void columnCode(const int colID){
                     dataBuffer[0] = MBOX_MSG_DRAW_BRICK;
                     dataBuffer[1] = x;
                     dataBuffer[2] = (int)(CEIL + BRICK_SPACING * (i+1) + BRICK_HEIGHT * (i + 0.5));
-                    dataBuffer[3] = goldenColumn[colID] ? BRICK_COLOR_ACTIVE : BRICK_COLOR_DEFAULT;
-                    XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE + MBOX_MSG_ID_SIZE);
-                    //TODO: not check collision with all bricks (unnecessary)
-                    //Send collision code to primarycore
+
+                    //TODO: not check collision with all bricks
                     b = toBrick(colID, i);
                     collision = checkCollideBrick(&ball, &b);
                     if(collision) {
-                      dataBuffer[0] = MBOX_MSG_COLLISION;
-                      dataBuffer[1] = collision;
-                      XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE + MBOX_MSG_ID_SIZE);
+                        //Erase the brick
+                        dataBuffer[3] = GAMEAREA_COLOR;
+                        XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE + MBOX_MSG_ID_SIZE);
+
+                        //Send collision code to primarycore
+                        bricksLeft[colID]--;                                    //Reduce the number of bricks left in column
+                        activeBricks[colID][i] = FALSE;                         //Set the collided-with brick to inactive
+                        dataBuffer[0] = MBOX_MSG_COLLISION;                     //Mailbox message type
+                        dataBuffer[1] = collision;                              //Collision code
+                        dataBuffer[2] = goldenColumn[colID] ? TRUE : FALSE;     //Bonus because of golden brick
+                        XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE + MBOX_MSG_ID_SIZE);
+                    }
+                    else{
+                    dataBuffer[3] = goldenColumn[colID] ? BRICK_COLOR_ACTIVE : BRICK_COLOR_DEFAULT;
+                    XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE + MBOX_MSG_ID_SIZE);
                     }
                 }
             }

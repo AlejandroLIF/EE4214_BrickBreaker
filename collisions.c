@@ -198,11 +198,7 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 			break;
 
 		case COLLIDE_BAR_SMINUS :
-			if(ball->s >= MIN_SPEED + 10) {
-				ball->s = ball->s - 10;
-			} else {
-				ball->s = MIN_SPEED;
-			}
+			updateBallSpeed(ball, BALL_SPEED_S_MINUS);
 			ball->d = 360 - ball->d;
 			break;
 
@@ -211,11 +207,7 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 			break;
 
 		case COLLIDE_BAR_SPLUS :
-			if(ball->s < MAX_SPEED - 10) {
-				ball->s = ball->s + 10;
-			} else {
-				ball->s = MAX_SPEED;
-			}
+			updateBallSpeed(ball, BALL_SPEED_S_PLUS);
 			ball->d = 360 - ball->d;
 			break;
 

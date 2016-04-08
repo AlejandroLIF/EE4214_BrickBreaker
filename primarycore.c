@@ -20,6 +20,9 @@ static void gpPBIntHandler(void *arg)
         case BUTTON_RIGHT:
         barMovementCode = BAR_MOVE_RIGHT;
         break;
+        case BUTTON_UP:
+            win = TRUE; //FIXME: THIS IS USED TO TEST SOFT-RESET FUNCTIONALITY
+            break;
         default: //No movement if more than one button is pressed at a time.
         barMovementCode = BAR_NO_MOVEMENT;
     }
@@ -39,7 +42,7 @@ int main(void){
 
 //Xilkernel entry point
 int main_prog(void){
-	int status;
+    int status;
     /*BEGIN MAILBOX INITIALIZATION*/
     XMbox_Config *ConfigPtr;
     ConfigPtr = XMbox_LookupConfig(MBOX_DEVICE_ID);
@@ -194,14 +197,16 @@ void* thread_mainLoop(void){
 }
 
 void welcome(void){
-	int drawGameAreaBackground = 1;
+    int drawGameAreaBackground = 1;
     lives = INITIAL_LIVES;
     bar.x = (LEFT_WALL + RIGHT_WALL)/2;
     //FIXME: hacky fix with the bar.x1
-   queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
-   queueMsg(MSGQ_TYPE_STATUSAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_STATUSAREA);
-
-    cyclesElapsed = 0;
+    queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
+    queueMsg(MSGQ_TYPE_STATUSAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_STATUSAREA);
+    nextScoreMilestone = SCORE_MILESTONE;
+    scoreMilestoneReached = 0;
+    score = 0;
+    win = FALSE;
 
     queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
     // ball = Ball_default; //FIXME: restore Ball_default
@@ -221,11 +226,17 @@ void welcome(void){
     XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
     hasCollided = FALSE;
     //Receive brick information and draw everything on screen.
-    // sem_post(&sem_drawGameArea);safePrint("Line 206\r\n");
     sem_post(&sem_mailboxListener);
-    // sem_post(&sem_brickCollisionListener);safePrint("Line 208\r\n");
     //Wait for the three branched threads to finish, regardless of the order.
     sem_wait(&sem_running);
+    //If a score milestone was reached, update ball speed and golden columns
+    while(scoreMilestoneReached){
+        updateBallSpeed(&ball, BALL_SPEED_SCORE_INCREASE);              //Update the ball's speed
+        dataBuffer[0] = MBOX_MSG_UPDATE_GOLDEN;                         //Update golden bricks.
+        XMbox_WriteBlocking(&mailbox, (u32*) dataBuffer, MBOX_MSG_UPDATE_GOLDEN_SIZE);
+        XMbox_WriteBlocking(&mailbox, (u32*) dataBuffer, MBOX_MSG_UPDATE_GOLDEN_SIZE);
+        scoreMilestoneReached--;    //Do not decrease scoreMilestoneReached in the loop condition evaluation, as it should not be decreased unless it's positive.
+    }
 
     //Draw the status area
     sem_post(&sem_drawStatusArea);
@@ -266,6 +277,7 @@ void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
 
 void running(void){
     int drawGameAreaBackground = 1;
+    int dataBuffer[1];
     //Erase the bar
     bar.c = GAMEAREA_COLOR;
     queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
@@ -292,17 +304,18 @@ void running(void){
     //Send the ball position to the secondary core to initialize collision checking
     XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
     hasCollided = FALSE;
-    if(cyclesElapsed++ >= GOLDEN_COLUMN_CHANGE_CONSTANT){
-        safePrint("Update golden!\r\n");
-        cyclesElapsed = 0;
-        message[0] = MBOX_MSG_UPDATE_GOLDEN;
-        XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_UPDATE_GOLDEN_SIZE);
-        XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_UPDATE_GOLDEN_SIZE);
-    }
     //Receive brick information and draw everything on screen.
     sem_post(&sem_mailboxListener);
     //Wait for the three branched threads to finish
     sem_wait(&sem_running);
+    //If a score milestone was reached, update ball speed and golden columns
+    while(scoreMilestoneReached){
+        updateBallSpeed(&ball, BALL_SPEED_SCORE_INCREASE);              //Update the ball's speed
+        dataBuffer[0] = MBOX_MSG_UPDATE_GOLDEN;                         //Update golden bricks.
+        XMbox_WriteBlocking(&mailbox, (u32*) dataBuffer, MBOX_MSG_UPDATE_GOLDEN_SIZE);
+        XMbox_WriteBlocking(&mailbox, (u32*) dataBuffer, MBOX_MSG_UPDATE_GOLDEN_SIZE);
+        scoreMilestoneReached--;    //Do not decrease scoreMilestoneReached in the loop condition evaluation, as it should not be decreased unless it's positive.
+    }
 
     //Draw the status area
     sem_post(&sem_drawStatusArea);
@@ -366,20 +379,37 @@ void* thread_brickCollisionListener(void){
     unsigned int dataBuffer[3];
     while(TRUE){
         sem_wait(&sem_brickCollisionListener);
-            //TODO: remove the while loop. no point in it :P
-            while(readFromMessageQueue(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_MSGSIZE_BRICK_COLLISION)){
-//                if(increaseScore(dataBuffer[1])){ //FIXME: magic numbers when interpreting the data buffer
-//                    increaseSpeed(ball);
-//                }
-                safePrint("Brick collision!\r\n");
-                safePrint(dataBuffer[0] + '0');
-                if(!hasCollided){
-                    updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
-                    hasCollided = TRUE;
-                }
+        //TODO: remove the while loop. no point in it :P
+        while(readFromMessageQueue(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_MSGSIZE_BRICK_COLLISION)){
+            if(increaseScore(dataBuffer[1])){ //FIXME: magic numbers when interpreting the data buffer
+                scoreMilestoneReached++;
             }
+            safePrint("Brick collision!\r\n");
+            safePrint(dataBuffer[0] + '0');
+            if(!hasCollided){
+                updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
+                hasCollided = TRUE;
+            }
+        }
         // sem_post(&sem_running); //Signal the running thread that we're done.
     }
+}
+
+int increaseScore(int isGoldenBrick){
+    if(isGoldenBrick){
+        score += BRICK_SCORE_GOLDEN;
+    }
+    else{
+        score += BRICK_SCORE_NORMAL;
+    }
+
+    // xil_printf("Score:%d\r\n", score);
+
+    if(score >= nextScoreMilestone){
+        nextScoreMilestone += SCORE_MILESTONE;
+        return TRUE;
+    }
+    return FALSE;
 }
 
 //Receives mailbox messages from the secondary core
@@ -394,21 +424,25 @@ void* thread_mailboxListener(void){
             XMbox_ReadBlocking(&mailbox, (u32*)&msgType, MBOX_MSG_ID_SIZE);
             switch(msgType){
                 case MBOX_MSG_DRAW_BRICK:
-                    XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE);
-                    queueMsg(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK);
-                    sem_post(&sem_drawGameArea); //TODO: fix semaphore when drawGameArea has been split into several methods
-                    break;
+                XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE);
+                queueMsg(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK);
+                sem_post(&sem_drawGameArea); //TODO: fix semaphore when drawGameArea has been split into several methods
+                break;
                 case MBOX_MSG_COLLISION:
-                    XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE);
-                    safePrint("queue brick collision\r\n");
-                    queueMsg(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_MSGSIZE_BRICK_COLLISION);
-                    sem_post(&sem_brickCollisionListener);
-                    break;
+                XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE);
+                safePrint("queue brick collision\r\n");
+                queueMsg(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_MSGSIZE_BRICK_COLLISION);
+                sem_post(&sem_brickCollisionListener);
+                break;
                 case MBOX_MSG_COMPUTATION_COMPLETE:
-                    brickUpdateComplete = TRUE;
-                    break;
+                brickUpdateComplete = TRUE;
+                break;
+                case MBOX_MSG_VICTORY:
+                brickUpdateComplete = TRUE;
+                win = TRUE;
+                break;
                 default:
-                    while(TRUE){safePrint("Invalid mailbox message\r\n");} //This should not happen. Trap runtime!
+                while(TRUE){safePrint("Invalid mailbox message\r\n");} //This should not happen. Trap runtime!
             }
         }
         sem_post(&sem_running); //Signal the running thread that we're done.
@@ -430,98 +464,98 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
     int x, y, c;
     switch(msgType){
         case MSGQ_TYPE_BRICK:
-            //FIXME: hardcoded indexes
-            x = dataBuffer[0];
-            y = dataBuffer[1];
-            c = dataBuffer[2];
+        //FIXME: hardcoded indexes
+        x = dataBuffer[0];
+        y = dataBuffer[1];
+        c = dataBuffer[2];
 
-            for(j = y - BRICK_HEIGHT/2; j < y + BRICK_HEIGHT/2; j++) {
-                for(i = x - BRICK_WIDTH/2; i < x + BRICK_WIDTH/2; i++) {
-                    XTft_SetPixel(&TftInstance, i, j, c);
-                }
+        for(j = y - BRICK_HEIGHT/2; j < y + BRICK_HEIGHT/2; j++) {
+            for(i = x - BRICK_WIDTH/2; i < x + BRICK_WIDTH/2; i++) {
+                XTft_SetPixel(&TftInstance, i, j, c);
             }
+        }
 
 
-            break;
+        break;
 
         case MSGQ_TYPE_BAR:
-            //FIXME: hardcoded indexes
-            x = dataBuffer[0];
-            y = dataBuffer[1];
-            c = dataBuffer[2];
+        //FIXME: hardcoded indexes
+        x = dataBuffer[0];
+        y = dataBuffer[1];
+        c = dataBuffer[2];
 
-            for(j = y - BAR_HEIGHT/2; j < y + BAR_HEIGHT/2; j++) {
-                for(i = 0; i < BAR_WIDTH; i++) {
-                    if(i < A_REGION_WIDTH) {
-                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : A_REGION_COLOR);
-                    } else if(i < A_REGION_WIDTH + S_REGION_WIDTH) {
-                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : S_REGION_COLOR);
-                    } else if(i < A_REGION_WIDTH + S_REGION_WIDTH + N_REGION_WIDTH) {
-                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : N_REGION_COLOR);
-                    } else if(i < A_REGION_WIDTH + 2*S_REGION_WIDTH + N_REGION_WIDTH) {
-                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : S_REGION_COLOR);
-                    }else{
-                        XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : A_REGION_COLOR);
-                    }
+        for(j = y - BAR_HEIGHT/2; j < y + BAR_HEIGHT/2; j++) {
+            for(i = 0; i < BAR_WIDTH; i++) {
+                if(i < A_REGION_WIDTH) {
+                    XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : A_REGION_COLOR);
+                } else if(i < A_REGION_WIDTH + S_REGION_WIDTH) {
+                    XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : S_REGION_COLOR);
+                } else if(i < A_REGION_WIDTH + S_REGION_WIDTH + N_REGION_WIDTH) {
+                    XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : N_REGION_COLOR);
+                } else if(i < A_REGION_WIDTH + 2*S_REGION_WIDTH + N_REGION_WIDTH) {
+                    XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : S_REGION_COLOR);
+                }else{
+                    XTft_SetPixel(&TftInstance, i + x - BAR_WIDTH/2, j, c ? c : A_REGION_COLOR);
                 }
             }
+        }
 
-            break;
+        break;
 
         case MSGQ_TYPE_BALL:
-            //FIXME: hardcoded indexes
-            x = dataBuffer[0];
-            y = dataBuffer[1];
-            c = dataBuffer[2];
-            for(j = 0; j < DIAMETER; j++) {
-                for (i = 0; i < DIAMETER; i++) {
-                    if(BALL_MASK[j][i] == 0xFFFFFFFF) {
-                        XTft_SetPixel(&TftInstance, x - DIAMETER/2 + i, y - DIAMETER/2 + j, c ? c : BALL_COLOR);
-                    }
+        //FIXME: hardcoded indexes
+        x = dataBuffer[0];
+        y = dataBuffer[1];
+        c = dataBuffer[2];
+        for(j = 0; j < DIAMETER; j++) {
+            for (i = 0; i < DIAMETER; i++) {
+                if(BALL_MASK[j][i] == 0xFFFFFFFF) {
+                    XTft_SetPixel(&TftInstance, x - DIAMETER/2 + i, y - DIAMETER/2 + j, c ? c : BALL_COLOR);
                 }
             }
-            break;
+        }
+        break;
 
         case MSGQ_TYPE_BACKGROUND:
-            //Fill screen with background color
-            for(j = 0; j < 479; j++) {
-                for(i = 0; i < 639; i++) {
-                    XTft_SetPixel(&TftInstance, i, j, BACKGROUND_COLOR);
-                }
+        //Fill screen with background color
+        for(j = 0; j < 479; j++) {
+            for(i = 0; i < 639; i++) {
+                XTft_SetPixel(&TftInstance, i, j, BACKGROUND_COLOR);
             }
-            break;
+        }
+        break;
 
         case MSGQ_TYPE_GAMEAREA:
-            //Draw game area
-            for(j = CEIL; j < FLOOR; j++) {
-                for(i = LEFT_WALL; i < RIGHT_WALL; i++) {
-                    XTft_SetPixel(&TftInstance, i, j, GAMEAREA_COLOR);
-                }
+        //Draw game area
+        for(j = CEIL; j < FLOOR; j++) {
+            for(i = LEFT_WALL; i < RIGHT_WALL; i++) {
+                XTft_SetPixel(&TftInstance, i, j, GAMEAREA_COLOR);
             }
-            break;
+        }
+        break;
 
         case MSGQ_TYPE_STATUSAREA:
-            //Draw score area
-            for(j = SCORE_CEIL; j < SCORE_FLOOR; j++) {
-                for(i = SCORE_LEFT_WALL; i < SCORE_RIGHT_WALL; i++) {
-                    XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
-                }
+        //Draw score area
+        for(j = SCORE_CEIL; j < SCORE_FLOOR; j++) {
+            for(i = SCORE_LEFT_WALL; i < SCORE_RIGHT_WALL; i++) {
+                XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
             }
-            break;
+        }
+        break;
 
         default:
-        	while(TRUE); //Should never happen. Trap runtime here.
+        while(TRUE); //Should never happen. Trap runtime here.
     }
 }
 
 //TODO: implement gameOver
 //GameOver method should display "Game Over" text and prompt the user to press a key to restart
 void gameOver(void){
-
+    safePrint("Game over!\r\n");
 }
 
 //TODO: implement win
 //Win method should display "Win" text and prompt the user to press a key to restart
 void gameWin(void){
-
+    safePrint("Victory!\r\n");
 }

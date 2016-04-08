@@ -23,18 +23,20 @@
 
 #define INITIAL_LIVES       3
 #define SLEEPCONSTANT       0
-#define GOLDEN_COLUMN_CHANGE_CONSTANT   125
 #define SEM_SHARED          1
 #define SEM_PRIVATE         0
 #define SEM_AVAILABLE       1
 #define SEM_BLOCKED         0
+#define BRICK_SCORE_NORMAL  1
+#define BRICK_SCORE_GOLDEN  2
+#define SCORE_MILESTONE     10
 
 typedef enum{
     MSGQ_MSGSIZE_BALL =             3 * sizeof(int),
     MSGQ_MSGSIZE_BAR =              3 * sizeof(int),
     MSGQ_MSGSIZE_BRICK =            3 * sizeof(int),
     MSGQ_MSGSIZE_BACKGROUND =       1 * sizeof(int),
-    MSGQ_MSGSIZE_BRICK_COLLISION =  1 * sizeof(int),
+    MSGQ_MSGSIZE_BRICK_COLLISION =  2 * sizeof(int),
     MSGQ_MSGSIZE_GAMEAREA =         1 * sizeof(int),
     MSGQ_MSGSIZE_STATUSAREA =       1 * sizeof(int)
 } MSGQ_MSGSIZE;
@@ -61,9 +63,11 @@ extern unsigned int cyclesElapsed;
 //Main game component (Ball and Bar) declarations.
 extern Bar bar;
 extern Ball ball;
-static unsigned int lives;
-static unsigned int score;
+static volatile unsigned int lives;
+static volatile unsigned int score;
 static volatile unsigned int hasCollided;
+static volatile int nextScoreMilestone;
+static volatile int scoreMilestoneReached;
 
 static XTft TftInstance;
 
@@ -93,6 +97,7 @@ static sem_t sem_running,
  void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType);
  void safePrint(const char *ptr);
  inline void buildBallMessage(Ball* ball, unsigned int* message);
+ int increaseScore(int isGoldenBrick);
 
 //Firmware entry point
 int main(void);

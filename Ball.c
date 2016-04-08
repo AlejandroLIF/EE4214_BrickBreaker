@@ -84,4 +84,14 @@ void followBar(Ball* ball, Bar* bar){
 
 }
 
+void updateBallSpeed(Ball* ball, int amount){
+    ball->s += amount;
+    if(ball->s < MIN_SPEED){
+        ball->s = MIN_SPEED;
+    }
+    else if(ball->s > MAX_SPEED){
+        ball->s = MAX_SPEED;
+    }
+}
+
 #endif
