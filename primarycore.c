@@ -3,6 +3,7 @@
 XGpio gpPB; //PB device instance.
 Bar bar = {0, FLOOR - 10 - 3};
 Ball ball;
+
 unsigned int cyclesElapsed;
 
 static void gpPBIntHandler(void *arg)
@@ -43,6 +44,7 @@ int main(void){
 //Xilkernel entry point
 int main_prog(void){
     int status;
+
     /*BEGIN MAILBOX INITIALIZATION*/
     XMbox_Config *ConfigPtr;
     ConfigPtr = XMbox_LookupConfig(MBOX_DEVICE_ID);
@@ -162,19 +164,18 @@ void* thread_mainLoop(void){
             while(FALSE/*!(buttonInput & BUTTON_CENTER)*/){ //while(!launch) //FIXME: QUEUES MESSAGES, BUT NOTHING IS READING THEM
                 // safePrint("primarycore: ready\r\n");
                 ready();
-                sleep(SLEEPCONSTANT); //FIXME: sleep calibration
+//                sleep(SLEEPCONSTANT); //FIXME: sleep calibration
             }
 
             //Running
             while(!win && !loseLife){
                 if(!paused){
-                    // safePrint("primarycore: running\r\n");
+                	safePrint("pc: run\r\n");
                     running();
                 }
-                else{
-                    //Paused
-                }
-                sleep(SLEEPCONSTANT); //FIXME: sleep calibration
+//                else{
+//                    //Paused
+//                }
             }
 
             //Lost Life
@@ -198,6 +199,7 @@ void* thread_mainLoop(void){
 
 void welcome(void){
     int drawGameAreaBackground = 1;
+    unsigned int dataBuffer[5];
     lives = INITIAL_LIVES;
     bar.x = (LEFT_WALL + RIGHT_WALL)/2;
     //FIXME: hacky fix with the bar.x1
@@ -213,18 +215,21 @@ void welcome(void){
     ball.x = bar.x;
     ball.y = BAR_Y - DIAMETER / 2;
     ball.d = 340;
-    ball.s = 10;
+    ball.s = 5;
     ball.c = 0;
-    queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
+    dataBuffer[0] = ball.x;
+    dataBuffer[1] = ball.y;
+    dataBuffer[2] = ball.c;
+    queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
 
     //Send a message to the secondary core, signaling a restart
     //The secondary core should reply with a draw message for every brick
     MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART;
-    int dataBuffer[MBOX_MSG_BEGIN_COMPUTATION_SIZE];
-    buildBallMessage(&ball, dataBuffer);
+    dataBuffer[0] = MBOX_MSG_BEGIN_COMPUTATION;
+    dataBuffer[1] = ball.x;
+    dataBuffer[2] = ball.y;
     XMbox_WriteBlocking(&mailbox, (u32*)&restartMessage, MBOX_MSG_ID_SIZE);
     XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
-    hasCollided = FALSE;
     //Receive brick information and draw everything on screen.
     sem_post(&sem_mailboxListener);
     //Wait for the three branched threads to finish, regardless of the order.
@@ -276,16 +281,24 @@ void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
 }
 
 void running(void){
+	ticks_before = xget_clock_ticks();
     int drawGameAreaBackground = 1;
-    int dataBuffer[1];
+    int dataBuffer[5];
     //Erase the bar
     bar.c = GAMEAREA_COLOR;
-    queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
+    dataBuffer[0] = bar.x;
+    dataBuffer[1] = bar.y;
+    dataBuffer[2] = bar.c;
+    queueMsg(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR);
     bar.c = COLOR_NONE;
     //Erase the ball
     ball.c = GAMEAREA_COLOR;
-    queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
+    dataBuffer[0] = ball.x;
+    dataBuffer[1] = ball.y;
+    dataBuffer[2] = ball.c;
+    queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
     ball.c = COLOR_NONE;
+    sem_post(&sem_drawGameArea);
 
     updateBar(&bar, barMovementCode);
     updateBallPosition(&ball);
@@ -298,11 +311,11 @@ void running(void){
 
     //Check collision with bar
     updateBallDirection(&ball, checkCollideBar(&ball, &bar));
-
-    unsigned int message[MBOX_MSG_BEGIN_COMPUTATION_SIZE];
-    buildBallMessage(&ball, message);
+    dataBuffer[0] = MBOX_MSG_BEGIN_COMPUTATION;
+    dataBuffer[1] = ball.x;
+    dataBuffer[2] = ball.y;
     //Send the ball position to the secondary core to initialize collision checking
-    XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
+    XMbox_WriteBlocking(&mailbox, (u32*) dataBuffer, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
     hasCollided = FALSE;
     //Receive brick information and draw everything on screen.
     sem_post(&sem_mailboxListener);
@@ -319,18 +332,24 @@ void running(void){
 
     //Draw the status area
     sem_post(&sem_drawStatusArea);
-    //Wait for the drawing operation to complete.
+//    Wait for the drawing operation to complete.
     sem_wait(&sem_running);
-}
 
-inline void buildBallMessage(Ball* ball, unsigned int* message){
-    message[0] = MBOX_MSG_BEGIN_COMPUTATION;
-    message[1] = ball->x;
-    message[2] = ball->y;
+    //Lock framerate to specified FPS
+    ticks_diff = xget_clock_ticks();
+    if(ticks_diff > ticks_before){
+    	ticks_diff -= ticks_before;
+    }
+    else{
+    	ticks_diff += 0xFFFFFFFF - ticks_before; //In case of overflow
+    }
+
+	if(ticks_diff < PERIOD_TICKS){				//If we have time to spare
+		sys_sleep(PERIOD_TICKS - ticks_diff);
+	}
 }
 
 //Receives messagequeue messages
-//TODO: split into separate draw methods:ball, bar, brick, background
 void* thread_drawGameArea(void){
     unsigned int dataBuffer[3];
     while(TRUE){
@@ -342,18 +361,22 @@ void* thread_drawGameArea(void){
         while(readFromMessageQueue(MSGQ_TYPE_GAMEAREA, dataBuffer, MSGQ_MSGSIZE_GAMEAREA)){
             // safePrint("primarycore: drawBackground\r\n");
             draw(dataBuffer, MSGQ_TYPE_GAMEAREA);
+            safePrint("pc: dbg\r\n");
         }
         while(readFromMessageQueue(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR)){
             // safePrint("primarycore: drawBar\r\n");
             draw(dataBuffer, MSGQ_TYPE_BAR);
+            safePrint("pc: dbar\r\n");
         }
         while(readFromMessageQueue(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL)){
             // safePrint("primarycore: drawBall\r\n");
             draw(dataBuffer, MSGQ_TYPE_BALL);
+            safePrint("pc: dball\r\n");
         }
         while(readFromMessageQueue(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK)){
             // safePrint("primarycore: drawBrick\r\n");
             draw(dataBuffer, MSGQ_TYPE_BRICK);
+            safePrint("pc: dbrick\r\n");
         }
     }
 }
@@ -377,6 +400,7 @@ int readFromMessageQueue(const MSGQ_TYPE id, void* dataBuffer, const MSGQ_MSGSIZ
 //Receives messagequeue messages
 void* thread_brickCollisionListener(void){
     unsigned int dataBuffer[3];
+    unsigned char temp;
     while(TRUE){
         sem_wait(&sem_brickCollisionListener);
         //TODO: remove the while loop. no point in it :P
@@ -384,12 +408,16 @@ void* thread_brickCollisionListener(void){
             if(increaseScore(dataBuffer[1])){ //FIXME: magic numbers when interpreting the data buffer
                 scoreMilestoneReached++;
             }
-            safePrint("Brick collision!\r\n");
-            safePrint(dataBuffer[0] + '0');
-            if(!hasCollided){
+//            safePrint("Brick collision!\r\n");
+//            safePrint(dataBuffer[0] + '0');
+//            if(!hasCollided){
                 updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
                 hasCollided = TRUE;
-            }
+                safePrint("pc: collide ");
+                temp = dataBuffer[0] + '0';
+                safePrint(&temp);
+                safePrint("\r\n");
+//            }
         }
         // sem_post(&sem_running); //Signal the running thread that we're done.
     }
@@ -403,8 +431,6 @@ int increaseScore(int isGoldenBrick){
         score += BRICK_SCORE_NORMAL;
     }
 
-    // xil_printf("Score:%d\r\n", score);
-
     if(score >= nextScoreMilestone){
         nextScoreMilestone += SCORE_MILESTONE;
         return TRUE;
@@ -414,7 +440,6 @@ int increaseScore(int isGoldenBrick){
 
 //Receives mailbox messages from the secondary core
 void* thread_mailboxListener(void){
-    Brick brick;
     MBOX_MSG_TYPE msgType;
     unsigned int dataBuffer[3]; //FIXME: magic numbers when declaring array size
     while(TRUE){
@@ -430,7 +455,6 @@ void* thread_mailboxListener(void){
                 break;
                 case MBOX_MSG_COLLISION:
                 XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE);
-                safePrint("queue brick collision\r\n");
                 queueMsg(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_MSGSIZE_BRICK_COLLISION);
                 sem_post(&sem_brickCollisionListener);
                 break;
@@ -453,7 +477,6 @@ void* thread_drawStatusArea(void){
     while(TRUE){
         sem_wait(&sem_drawStatusArea);
         draw(0, MSGQ_TYPE_STATUSAREA);
-        //TODO: draw the status area
         sem_post(&sem_running); //Signal the running thread that we're done.
     }
 }
@@ -480,7 +503,7 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
         break;
 
         case MSGQ_TYPE_BAR:
-        //FIXME: hardcoded indexes
+        //FIXME: hard-coded indexes
         x = dataBuffer[0];
         y = dataBuffer[1];
         c = dataBuffer[2];
@@ -542,7 +565,7 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
                 XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
             }
         }
-        XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL, SCORE_CEIL);
+        XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL + SCORE_TEXT_OFFSET/4, SCORE_CEIL + SCORE_TEXT_OFFSET/4);
         XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
 
         //FIXME: Need correct offset between score text and score value
@@ -550,9 +573,13 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
 		dscore = (score % 100) / 10;
 		uscore = score % 10;
 
-        XTft_Write(&TftInstance, "Score");
-        
-        XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL, SCORE_CEIL + SCORE_TEXT_OFFSET);
+        XTft_Write(&TftInstance, 'S');
+        XTft_Write(&TftInstance, 'c');
+        XTft_Write(&TftInstance, 'o');
+        XTft_Write(&TftInstance, 'r');
+        XTft_Write(&TftInstance, 'e');
+
+        XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL + SCORE_TEXT_OFFSET, SCORE_CEIL + SCORE_TEXT_OFFSET);
 
 		XTft_Write(&TftInstance, intToChar(hscore));
 		XTft_Write(&TftInstance, intToChar(dscore));
@@ -565,26 +592,32 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
     }
 }
 
-//TODO: implement gameOver
 //GameOver method should display "Game Over" text and prompt the user to press a key to restart
 void gameOver(void){
     safePrint("Game over!\r\n");
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2);
     XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
-    XTft_Write(&TftInstance, "Game Over");
+    XTft_Write(&TftInstance, 'G');
+    XTft_Write(&TftInstance, 'a');
+    XTft_Write(&TftInstance, 'm');
+    XTft_Write(&TftInstance, 'e');
+    XTft_Write(&TftInstance, ' ');
+    XTft_Write(&TftInstance, 'O');
+    XTft_Write(&TftInstance, 'v');
+    XTft_Write(&TftInstance, 'e');
+    XTft_Write(&TftInstance, 'r');
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2 + 20);
-    XTft_Write(&TftInstance, "Press any key to restart");
+    //XTft_Write(&TftInstance, "Press any key to restart");
 }
 
-//TODO: implement win
 //Win method should display "Win" text and prompt the user to press a key to restart
 void gameWin(void){
     safePrint("Victory!\r\n");
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2);
     XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
-    XTft_Write(&TftInstance, "Victory");
+    XTft_Write(&TftInstance, 'V');
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2 + 20);
-    XTft_Write(&TftInstance, "Press any key to restart");
+    //XTft_Write(&TftInstance, "Press any key to restart");
 }
 
 unsigned char intToChar(int n){
