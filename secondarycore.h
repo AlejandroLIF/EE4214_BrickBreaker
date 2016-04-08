@@ -36,6 +36,7 @@ static int activeBricks[COLUMNS][ROWS];
 static int bricksLeft[COLUMNS];
 static int goldenColumn[COLUMNS];
 static int columnsLeft;
+static int isInitialized[COLUMNS];
 
 static pthread_attr_t attr;
 struct sched_param schedpar;

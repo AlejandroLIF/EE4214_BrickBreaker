@@ -9,11 +9,11 @@
 #define DIAMETER    15
 #define BALL_SIZE   20
 #define BALL_COLOR  0x00151515
-#define MAX_SPEED	40              //FIXME: these have to be adjusted to FPS
-#define MIN_SPEED	2               //FIXME: these have to be adjusted to FPS
-#define BALL_SPEED_SCORE_INCREASE 3 //FIXME: these have to be adjusted to FPS
-#define BALL_SPEED_S_MINUS  -10     //FIXME: these have to be adjusted to FPS
-#define BALL_SPEED_S_PLUS   10      //FIXME: these have to be adjusted to FPS
+#define MAX_SPEED	20              //FIXME: these have to be adjusted to FPS
+#define MIN_SPEED	1               //FIXME: these have to be adjusted to FPS
+#define BALL_SPEED_SCORE_INCREASE 1 //FIXME: these have to be adjusted to FPS
+#define BALL_SPEED_S_MINUS  -2     //FIXME: these have to be adjusted to FPS
+#define BALL_SPEED_S_PLUS   2      //FIXME: these have to be adjusted to FPS
 
 struct Ball_s{
     	unsigned int x; /*horizontal anchor*/

@@ -10,11 +10,10 @@
 #include <sys/timer.h>
 #include <sys/intr.h>
 #include "semaphore.h"
-#include "xtmrctr_l.h"
-#include "xtmrctr.h"
 
 #include "xtftConfig.h"
 #include "xmutexConfig.h"
+
 #include "buttonIO.h"
 #include "MainScreen.h"
 #include "mailboxConfig.h"
@@ -24,7 +23,6 @@
 #include "collisions.h"
 
 #define INITIAL_LIVES       3
-#define SLEEPCONSTANT       0
 #define SEM_SHARED          1
 #define SEM_PRIVATE         0
 #define SEM_AVAILABLE       1
@@ -32,9 +30,7 @@
 #define BRICK_SCORE_NORMAL  1
 #define BRICK_SCORE_GOLDEN  2
 #define SCORE_MILESTONE     10
-#define TICKS_PER_MS		25000
-#define PERIOD_TICKS        TICKS_PER_MS*33
-#define FPS_TIMER_NUMBER	0
+#define PERIOD_TICKS        20
 
 typedef enum{
     MSGQ_MSGSIZE_BALL =             3 * sizeof(int),
@@ -71,9 +67,8 @@ static volatile unsigned int score;
 static volatile unsigned int hasCollided;
 static volatile int nextScoreMilestone;
 static volatile int scoreMilestoneReached;
-static unsigned int ticks_before,
+static time_t ticks_before,
                     ticks_diff;
-static XTmrCtr xTmrCtr;
 
 static XTft TftInstance;
 
@@ -90,7 +85,11 @@ static sem_t sem_running,
              sem_drawGameArea,
              sem_drawStatusArea,
              sem_brickCollisionListener,
-             sem_mailboxListener;
+             sem_mailboxListener,
+             sem_fps_start,
+             sem_fps_end,
+             sem_btn_start,
+             sem_btn_end;
 
  //Running state methods
  void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size);
@@ -117,6 +116,8 @@ void* thread_drawGameArea(void);
 void* thread_drawStatusArea(void);
 void* thread_brickCollisionListener(void);
 void* thread_mailboxListener(void);
+void* thread_fpsTimer(void);
+void* thread_btnTimer(void);
 
 
 //Interrupt handler thread
