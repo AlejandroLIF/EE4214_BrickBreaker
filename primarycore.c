@@ -149,7 +149,7 @@ int main_prog(void){
 void* thread_mainLoop(void){
     while(TRUE){
         //Welcome
-        // safePrint("primarycore: Welcome\r\n");
+        //safePrint("primarycore: Welcome\r\n");
         welcome();
         while(!(buttonInput & BUTTON_CENTER));//while(!start)
         sleep(1000); //FIXME: hardcoded delay
@@ -215,9 +215,11 @@ void welcome(void){
     //Send a message to the secondary core, signaling a restart
     //The secondary core should reply with a draw message for every brick
     MBOX_MSG_TYPE restartMessage = MBOX_MSG_RESTART;
-    int dataBuffer[3] = {MBOX_MSG_BEGIN_COMPUTATION, 0, 0};//FIXME: this is a hacky placeholder
+    int dataBuffer[MBOX_MSG_BEGIN_COMPUTATION_SIZE];
+    buildBallMessage(&ball, dataBuffer);
     XMbox_WriteBlocking(&mailbox, (u32*)&restartMessage, MBOX_MSG_ID_SIZE);
-    XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, 3*sizeof(int));
+    XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
+    hasCollided = FALSE;
     //Receive brick information and draw everything on screen.
     // sem_post(&sem_drawGameArea);safePrint("Line 206\r\n");
     sem_post(&sem_mailboxListener);
@@ -252,9 +254,8 @@ void ready(void){
 void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
     int msgid;
     msgid = msgget(msgType, IPC_CREAT);
-
     if( msgid == -1 ) {
-        xil_printf ("Error while queueing draw data. MSG_TYPE:%d\tsize:%d\tErrno: %d\r\n", msgType, size, errno);
+        xil_printf ("Error while queueing. MSG_TYPE:%d\tsize:%d\tErrno: %d\r\n", msgType, size, errno);
         pthread_exit (&errno);
     }
     if(msgsnd(msgid, data, size, 0) < 0 ) { // blocking send
@@ -290,6 +291,7 @@ void running(void){
     buildBallMessage(&ball, message);
     //Send the ball position to the secondary core to initialize collision checking
     XMbox_WriteBlocking(&mailbox, (u32*) message, MBOX_MSG_BEGIN_COMPUTATION_SIZE);
+    hasCollided = FALSE;
     if(cyclesElapsed++ >= GOLDEN_COLUMN_CHANGE_CONSTANT){
         safePrint("Update golden!\r\n");
         cyclesElapsed = 0;
@@ -369,7 +371,12 @@ void* thread_brickCollisionListener(void){
 //                if(increaseScore(dataBuffer[1])){ //FIXME: magic numbers when interpreting the data buffer
 //                    increaseSpeed(ball);
 //                }
-                updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
+                safePrint("Brick collision!\r\n");
+                safePrint(dataBuffer[0] + '0');
+                if(!hasCollided){
+                    updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
+                    hasCollided = TRUE;
+                }
             }
         // sem_post(&sem_running); //Signal the running thread that we're done.
     }
@@ -393,6 +400,7 @@ void* thread_mailboxListener(void){
                     break;
                 case MBOX_MSG_COLLISION:
                     XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE);
+                    safePrint("queue brick collision\r\n");
                     queueMsg(MSGQ_TYPE_BRICK_COLLISION, dataBuffer, MSGQ_MSGSIZE_BRICK_COLLISION);
                     sem_post(&sem_brickCollisionListener);
                     break;
@@ -400,7 +408,7 @@ void* thread_mailboxListener(void){
                     brickUpdateComplete = TRUE;
                     break;
                 default:
-                    while(TRUE); //This should not happen. Trap runtime!
+                    while(TRUE){safePrint("Invalid mailbox message\r\n");} //This should not happen. Trap runtime!
             }
         }
         sem_post(&sem_running); //Signal the running thread that we're done.
