@@ -194,7 +194,8 @@ CollisionCode checkCollideBrick(Ball* ball, Brick* brick) {
 void updateBallDirection(Ball* ball, CollisionCode collision) {
 	switch (collision) {
 		case COLLIDE_BAR_AMINUS :
-			ball->d = (165 - ball->d)%360;
+        //Should be 360 - ball->d +- 15, maybe depending on which direction the ball is incoming from
+			ball->d = 360 - ball->d - 15;
 			break;
 
 		case COLLIDE_BAR_SMINUS :
@@ -212,7 +213,8 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 			break;
 
 	    case COLLIDE_BAR_APLUS :
-		    ball->d = (195 - ball->d)%360;
+        //Should be 360 - ball->d +- 15, maybe depending on which direction the ball is incoming from
+		    ball->d = (360 - ball->d + 15) % 360;
 		    break;
 		case COLLIDE_WALL_LEFT :
             ball->d = ball->d > 180 ? 540 - ball->d : ((540 - ball->d) % 360);
@@ -227,7 +229,14 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
       //TODO: Implement brick collision bounce
       case COLLIDE_BRICK_UL :
           //Collide upper left corner
-          ball->d = ball->d > 270 ? 630 - ball->d : 270 - ball->d;
+          if(ball->d > 315 && ball->d < 360) {
+              ball->d = 630 - ball->d;
+          } else if (ball->d < 135) {
+              ball->d = 270 - ball->d;
+          } else {
+              ball->d = 360 - ball->d;
+          }
+          //ball->d = ball->d > 270 ? 630 - ball->d; : 270 - ball->d;
           break;
 
       case COLLIDE_BRICK_UC :
@@ -237,7 +246,14 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 
       case COLLIDE_BRICK_UR :
           //Collide upper right corner
-          ball->d = ball->d > 90 ? 450 - ball->d : 90 - ball->d;
+          if(ball->d > 45 && ball->d <= 90) {
+              ball->d = 90 - ball->d;
+          } else if(ball->d < 225 && ball->d > 90) {
+              ball->d = 450 - ball->d;
+          } else {
+              ball->d = 360 - ball->d;
+          }
+          //ball->d = ball->d > 90 ? 450 - ball->d : 90 - ball->d;
           break;
 
       case COLLIDE_BRICK_CL :
@@ -252,7 +268,14 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 
       case COLLIDE_BRICK_BL :
           //Collide bottom left corner
-          ball->d = ball->d > 90 ? 450 - ball->d : 90 - ball->d;
+          if(ball->d > 225 && ball->d < 360) {
+              ball->d = 450 - ball->d;
+          } else if (ball->d < 45) {
+              ball->d = 90 - ball->d;
+          } else {
+              ball->d = 360 - ball->d;
+          }
+          //ball->d = ball->d > 90 ? 450 - ball->d : 90 - ball->d;
           break;
 
       case COLLIDE_BRICK_BC :
@@ -262,7 +285,14 @@ void updateBallDirection(Ball* ball, CollisionCode collision) {
 
       case COLLIDE_BRICK_BR :
           //Collide bottom right corner
-          ball->d = ball->d > 270 ? 630 - ball->d : 270 - ball->d;
+          if(ball->d > 135 && ball->d <= 270) {
+              ball->d = 270 - ball->d;
+          } else if (ball->d > 270 && ball->d < 315) {
+              ball->d = 630 - ball->d;
+          } else {
+              ball->d = 360 - ball->d;
+          }
+          //ball->d = ball->d > 270 ? 630 - ball->d : 270 - ball->d;
           break;
 
 		default:

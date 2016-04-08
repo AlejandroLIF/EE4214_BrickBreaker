@@ -22,8 +22,8 @@ static void gpPBIntHandler(void *arg)
         barMovementCode = BAR_MOVE_RIGHT;
         break;
         case BUTTON_UP:
-            win = TRUE; //FIXME: THIS IS USED TO TEST SOFT-RESET FUNCTIONALITY
-            break;
+        win = TRUE; //FIXME: THIS IS USED TO TEST SOFT-RESET FUNCTIONALITY
+        break;
         default: //No movement if more than one button is pressed at a time.
         barMovementCode = BAR_NO_MOVEMENT;
     }
@@ -164,18 +164,18 @@ void* thread_mainLoop(void){
             while(FALSE/*!(buttonInput & BUTTON_CENTER)*/){ //while(!launch) //FIXME: QUEUES MESSAGES, BUT NOTHING IS READING THEM
                 // safePrint("primarycore: ready\r\n");
                 ready();
-//                sleep(SLEEPCONSTANT); //FIXME: sleep calibration
+                //                sleep(SLEEPCONSTANT); //FIXME: sleep calibration
             }
 
             //Running
             while(!win && !loseLife){
                 if(!paused){
-                	safePrint("pc: run\r\n");
+                    safePrint("pc: run\r\n");
                     running();
                 }
-//                else{
-//                    //Paused
-//                }
+                //                else{
+                //                    //Paused
+                //                }
             }
 
             //Lost Life
@@ -243,10 +243,15 @@ void welcome(void){
         scoreMilestoneReached--;    //Do not decrease scoreMilestoneReached in the loop condition evaluation, as it should not be decreased unless it's positive.
     }
 
-    //Draw the status area
-    sem_post(&sem_drawStatusArea);
-    //Wait for the drawing operation to complete.
-    sem_wait(&sem_running);
+    //Only draw the status area if lives or score has been updated
+    if(last_drawn_lives != lives || last_drawn_score != score) {
+        sem_post(&sem_drawStatusArea);
+        last_drawn_lives = lives;
+        last_drawn_score = score;
+        //Wait for the drawing operation to complete.
+        sem_wait(&sem_running);
+    }
+
     //TODO: draw welcome text
 }
 
@@ -281,7 +286,7 @@ void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
 }
 
 void running(void){
-	ticks_before = xget_clock_ticks();
+    ticks_before = xget_clock_ticks();
     int drawGameAreaBackground = 1;
     int dataBuffer[5];
     //Erase the bar
@@ -330,23 +335,28 @@ void running(void){
         scoreMilestoneReached--;    //Do not decrease scoreMilestoneReached in the loop condition evaluation, as it should not be decreased unless it's positive.
     }
 
-    //Draw the status area
-    sem_post(&sem_drawStatusArea);
-//    Wait for the drawing operation to complete.
-    sem_wait(&sem_running);
+    //Only draw the status area if lives or score has been updated
+    if(last_drawn_lives != lives || last_drawn_score != score || last_drawn_speed != ball.s) {
+        sem_post(&sem_drawStatusArea);
+        last_drawn_lives = lives;
+        last_drawn_score = score;
+        last_drawn_speed = ball.s;
+        //Wait for the drawing operation to complete.
+        sem_wait(&sem_running);
+    }
 
     //Lock framerate to specified FPS
     ticks_diff = xget_clock_ticks();
     if(ticks_diff > ticks_before){
-    	ticks_diff -= ticks_before;
+        ticks_diff -= ticks_before;
     }
     else{
-    	ticks_diff += 0xFFFFFFFF - ticks_before; //In case of overflow
+        ticks_diff += 0xFFFFFFFF - ticks_before; //In case of overflow
     }
 
-	if(ticks_diff < PERIOD_TICKS){				//If we have time to spare
-		sys_sleep(PERIOD_TICKS - ticks_diff);
-	}
+    if(ticks_diff < PERIOD_TICKS){				//If we have time to spare
+        sys_sleep(PERIOD_TICKS - ticks_diff);
+    }
 }
 
 //Receives messagequeue messages
@@ -408,16 +418,16 @@ void* thread_brickCollisionListener(void){
             if(increaseScore(dataBuffer[1])){ //FIXME: magic numbers when interpreting the data buffer
                 scoreMilestoneReached++;
             }
-//            safePrint("Brick collision!\r\n");
-//            safePrint(dataBuffer[0] + '0');
-//            if(!hasCollided){
-                updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
-                hasCollided = TRUE;
-                safePrint("pc: collide ");
-                temp = dataBuffer[0] + '0';
-                safePrint(&temp);
-                safePrint("\r\n");
-//            }
+            //            safePrint("Brick collision!\r\n");
+            //            safePrint(dataBuffer[0] + '0');
+            //            if(!hasCollided){
+            updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
+            hasCollided = TRUE;
+            safePrint("pc: collide ");
+            temp = dataBuffer[0] + '0';
+            safePrint(&temp);
+            safePrint("\r\n");
+            //            }
         }
         // sem_post(&sem_running); //Signal the running thread that we're done.
     }
@@ -485,7 +495,7 @@ void* thread_drawStatusArea(void){
 void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
     int i, j;
     int x, y, c;
-    int hscore, dscore, uscore;
+    int hscore, dscore, uscore, hspeed, dspeed, uspeed;
     switch(msgType){
         case MSGQ_TYPE_BRICK:
         //FIXME: hardcoded indexes
@@ -561,30 +571,90 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
         case MSGQ_TYPE_STATUSAREA:
         //Draw score area
         for(j = SCORE_CEIL; j < SCORE_FLOOR; j++) {
-            for(i = SCORE_LEFT_WALL; i < SCORE_RIGHT_WALL; i++) {
+            for(i = STATUS_LEFT_WALL; i < STATUS_RIGHT_WALL; i++) {
                 XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
             }
         }
-        XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL + SCORE_TEXT_OFFSET/4, SCORE_CEIL + SCORE_TEXT_OFFSET/4);
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET/4, SCORE_CEIL + STATUS_TEXT_OFFSET/4);
         XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
 
         //FIXME: Need correct offset between score text and score value
         hscore = score / 100;
-		dscore = (score % 100) / 10;
-		uscore = score % 10;
+        dscore = (score % 100) / 10;
+        uscore = score % 10;
 
-        XTft_Write(&TftInstance, 'S');
-        XTft_Write(&TftInstance, 'c');
-        XTft_Write(&TftInstance, 'o');
-        XTft_Write(&TftInstance, 'r');
-        XTft_Write(&TftInstance, 'e');
+        screenWrite("Score", 5);
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET, SCORE_CEIL + STATUS_TEXT_OFFSET);
 
-        XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL + SCORE_TEXT_OFFSET, SCORE_CEIL + SCORE_TEXT_OFFSET);
+        XTft_Write(&TftInstance, intToChar(hscore));
+        XTft_Write(&TftInstance, intToChar(dscore));
+        XTft_Write(&TftInstance, intToChar(uscore));
 
-		XTft_Write(&TftInstance, intToChar(hscore));
-		XTft_Write(&TftInstance, intToChar(dscore));
-		XTft_Write(&TftInstance, intToChar(uscore));
+        //Draw LIVES area
+        for(j = LIVES_CEIL; j < LIVES_FLOOR; j++) {
+            for(i = STATUS_LEFT_WALL; i < STATUS_RIGHT_WALL; i++) {
+                XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
+            }
+        }
 
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET/4, LIVES_CEIL + STATUS_TEXT_OFFSET/4);
+        XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
+        screenWrite("Lives", 5);
+
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET, LIVES_CEIL + STATUS_TEXT_OFFSET);
+        XTft_Write(&TftInstance, intToChar(lives));
+
+        //Draw BALL SPEED area
+        for(j = BALLSPEED_CEIL; j < BALLSPEED_FLOOR; j++) {
+            for(i = STATUS_LEFT_WALL; i < STATUS_RIGHT_WALL; i++) {
+                XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
+            }
+        }
+
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET/4, BALLSPEED_CEIL + STATUS_TEXT_OFFSET/4);
+        XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
+        screenWrite("Ball speed", 10);
+
+        hspeed = ball.s / 100;
+        dspeed = (ball.s % 100) / 10;
+        uspeed = ball.s % 10;
+
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET, BALLSPEED_CEIL + STATUS_TEXT_OFFSET);
+        XTft_Write(&TftInstance, intToChar(hspeed));
+        XTft_Write(&TftInstance, intToChar(dspeed));
+        XTft_Write(&TftInstance, intToChar(uspeed));
+
+
+        //Draw BRICKS LEFT area
+        for(j = BRICKSLEFT_CEIL; j < BRICKSLEFT_FLOOR; j++) {
+            for(i = STATUS_LEFT_WALL; i < STATUS_RIGHT_WALL; i++) {
+                XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
+            }
+        }
+
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET/4, BRICKSLEFT_CEIL + STATUS_TEXT_OFFSET/4);
+        XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
+        screenWrite("Bricks left", 11);
+
+        //TODO: Add brick counter to be able to display this
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET, BRICKSLEFT_CEIL + STATUS_TEXT_OFFSET);
+        //XTft_Write(&TftInstance, intToChar(lives));
+        screenWrite("Todo", 4);
+
+        //Draw PLAYTIME area
+        for(j = PLAYTIME_CEIL; j < PLAYTIME_FLOOR; j++) {
+            for(i = STATUS_LEFT_WALL; i < STATUS_RIGHT_WALL; i++) {
+                XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
+            }
+        }
+
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET/4, PLAYTIME_CEIL + STATUS_TEXT_OFFSET/4);
+        XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
+        screenWrite("Game time", 9);
+
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET, PLAYTIME_CEIL + STATUS_TEXT_OFFSET);
+        //XTft_Write(&TftInstance, intToChar(lives));
+        screenWrite("Todo", 4);
         break;
 
         default:
@@ -595,31 +665,30 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
 //GameOver method should display "Game Over" text and prompt the user to press a key to restart
 void gameOver(void){
     safePrint("Game over!\r\n");
-    XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2);
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 150, (CEIL + FLOOR)/2);
     XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
-    XTft_Write(&TftInstance, 'G');
-    XTft_Write(&TftInstance, 'a');
-    XTft_Write(&TftInstance, 'm');
-    XTft_Write(&TftInstance, 'e');
-    XTft_Write(&TftInstance, ' ');
-    XTft_Write(&TftInstance, 'O');
-    XTft_Write(&TftInstance, 'v');
-    XTft_Write(&TftInstance, 'e');
-    XTft_Write(&TftInstance, 'r');
-    XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2 + 20);
-    //XTft_Write(&TftInstance, "Press any key to restart");
+    screenWrite("Game Over", 9);
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 100, (CEIL + FLOOR)/2 + 20);
+    screenWrite("Press the middle button to restart", 34);
 }
 
 //Win method should display "Win" text and prompt the user to press a key to restart
 void gameWin(void){
     safePrint("Victory!\r\n");
-    XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2);
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 150, (CEIL + FLOOR)/2);
     XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
-    XTft_Write(&TftInstance, 'V');
-    XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2 + 20);
-    //XTft_Write(&TftInstance, "Press any key to restart");
+    screenWrite("Victory!", 8);
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 100, (CEIL + FLOOR)/2 + 20);
+    screenWrite("Press the middle button to restart", 34);
 }
 
 unsigned char intToChar(int n){
-	return (unsigned char)(n + 48);
+    return (unsigned char)(n + 48);
+}
+
+void screenWrite(char* str, int size) {
+    int i;
+    for(i = 0; i < size; i++) {
+        XTft_Write(&TftInstance, str[i]);
+    }
 }

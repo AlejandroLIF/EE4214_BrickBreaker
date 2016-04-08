@@ -64,6 +64,9 @@ extern Bar bar;
 extern Ball ball;
 static volatile unsigned int lives;
 static volatile unsigned int score;
+static volatile unsigned int last_drawn_lives;
+static volatile unsigned int last_drawn_score;
+static volatile unsigned int last_drawn_speed;
 static volatile unsigned int hasCollided;
 static volatile int nextScoreMilestone;
 static volatile int scoreMilestoneReached;
@@ -104,6 +107,7 @@ static sem_t sem_running,
  inline void buildBallMessage(Ball* ball, unsigned int* message);
  int increaseScore(int isGoldenBrick);
  unsigned char intToChar(int n);
+ void screenWrite(char* str, int size);
 
 //Firmware entry point
 int main(void);
