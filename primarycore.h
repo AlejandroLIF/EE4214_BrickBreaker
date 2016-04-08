@@ -98,6 +98,7 @@ static sem_t sem_running,
  void safePrint(const char *ptr);
  inline void buildBallMessage(Ball* ball, unsigned int* message);
  int increaseScore(int isGoldenBrick);
+ unsigned char intToChar(int n);
 
 //Firmware entry point
 int main(void);
