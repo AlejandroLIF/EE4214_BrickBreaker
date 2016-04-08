@@ -462,6 +462,7 @@ void* thread_drawStatusArea(void){
 void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
     int i, j;
     int x, y, c;
+    int hscore, dscore, uscore;
     switch(msgType){
         case MSGQ_TYPE_BRICK:
         //FIXME: hardcoded indexes
@@ -545,9 +546,17 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
         XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
 
         //FIXME: Need correct offset between score text and score value
+        hscore = score / 100;
+		dscore = (score; % 100) / 10;
+		uscore = score % 10;
+
         XTft_Write(&TftInstance,'Score');
+        
         XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL, SCORE_CEIL + SCORE_TEXT_OFFSET);
-        XTft_Write(&TftInstance, score);
+
+		XTft_Write(&TftInstance, intToChar(hscore));
+		XTft_Write(&TftInstance, intToChar(dscore));
+		XTft_Write(&TftInstance, intToChar(uscore));
 
         break;
 
@@ -576,4 +585,8 @@ void gameWin(void){
     XTft_Write(&TftInstance, 'Victory');
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2 + 20);
     XTft_Write(&TftInstance, 'Press any key to restart');
+}
+
+unsigned char intToChar(int n){
+	return (unsigned char)(n + 48);
 }
