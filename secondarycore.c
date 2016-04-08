@@ -140,6 +140,7 @@ void* thread_mailboxListener(void){
         switch(msgType){
             case MBOX_MSG_RESTART:
             restart();
+            safePrint("sc: rs\r\n");
             break;
             case MBOX_MSG_BEGIN_COMPUTATION:
             XMbox_ReadBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_BALL_SIZE);
@@ -151,6 +152,10 @@ void* thread_mailboxListener(void){
             break;
             case MBOX_MSG_UPDATE_GOLDEN:
             sem_post(&sem_goldenColumns);
+            //This forces the bricks to update color whenever the golden columns change.
+            for(i = 0; i < COLUMNS; i++){
+            	isInitialized[i] = FALSE;
+            }
             break;
             default:
             while(TRUE){safePrint("secondary core: mailboxlistener error\r\n");}; //Error! Trap runtime here. THIS SHOULD NOT HAPPEN
@@ -167,6 +172,7 @@ void restart(void){
         }
         bricksLeft[i] = ROWS;
         goldenColumn[i] = FALSE;
+        isInitialized[i] = FALSE;
     }
 
     columnsLeft = COLUMNS;
@@ -241,9 +247,14 @@ void columnCode(const int colID){
                     dataBuffer[1] = x;
                     dataBuffer[2] = (int)(CEIL + BRICK_SPACING * (i+1) + BRICK_HEIGHT * (i + 0.5));
 
-                    //TODO: not check collision with all bricks
                     b = toBrick(colID, i);
-                    collision = checkCollideBrick(&ball, &b);
+                    //If the ball is not horizontally close to the bricks, don't try collission checking
+                    if(x >= ball.x - BRICK_WIDTH - DIAMETER/2 && x <= ball.x + BRICK_WIDTH + DIAMETER/2){
+                    	collision = checkCollideBrick(&ball, &b);
+                    }
+                    else{
+                    	collision = COLLIDE_NONE;
+                    }
                     if(collision) {
                         //Erase the brick
                         dataBuffer[3] = GAMEAREA_COLOR;
@@ -256,13 +267,16 @@ void columnCode(const int colID){
                         dataBuffer[1] = collision;                              //Collision code
                         dataBuffer[2] = goldenColumn[colID] ? TRUE : FALSE;     //Bonus because of golden brick
                         XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_COLLISION_SIZE + MBOX_MSG_ID_SIZE);
+                        safePrint("sc: cb\r\n");
                     }
-                    else{
-                    dataBuffer[3] = goldenColumn[colID] ? BRICK_COLOR_ACTIVE : BRICK_COLOR_DEFAULT;
-                    XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE + MBOX_MSG_ID_SIZE);
+                    else if(!isInitialized[colID]){
+						dataBuffer[3] = goldenColumn[colID] ? BRICK_COLOR_ACTIVE : BRICK_COLOR_DEFAULT;
+						XMbox_WriteBlocking(&mailbox, (u32*)dataBuffer, MBOX_MSG_DRAW_BRICK_SIZE + MBOX_MSG_ID_SIZE);
+						safePrint("sc: db\r\n");
                     }
                 }
             }
+            isInitialized[colID] = TRUE;
         }
         sem_post(&sem_updateComplete);
         sem_wait(&sem_columnWait);
