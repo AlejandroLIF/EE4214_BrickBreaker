@@ -238,10 +238,15 @@ void welcome(void){
         scoreMilestoneReached--;    //Do not decrease scoreMilestoneReached in the loop condition evaluation, as it should not be decreased unless it's positive.
     }
 
-    //Draw the status area
-    sem_post(&sem_drawStatusArea);
-    //Wait for the drawing operation to complete.
-    sem_wait(&sem_running);
+    //Only draw the status area if lives or score has been updated
+    if(last_drawn_lives != lives || last_drawn_score != score) {
+        sem_post(&sem_drawStatusArea);
+        last_drawn_lives = lives;
+        last_drawn_score = score;
+        //Wait for the drawing operation to complete.
+        sem_wait(&sem_running);
+    }
+
     //TODO: draw welcome text
 }
 
@@ -538,11 +543,11 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
         case MSGQ_TYPE_STATUSAREA:
         //Draw score area
         for(j = SCORE_CEIL; j < SCORE_FLOOR; j++) {
-            for(i = SCORE_LEFT_WALL; i < SCORE_RIGHT_WALL; i++) {
+            for(i = STATUS_LEFT_WALL; i < STATUS_RIGHT_WALL; i++) {
                 XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
             }
         }
-        XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL + SCORE_TEXT_OFFSET/4, SCORE_CEIL + SCORE_TEXT_OFFSET/4);
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET/4, SCORE_CEIL + STATUS_TEXT_OFFSET/4);
         XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
 
         //FIXME: Need correct offset between score text and score value
@@ -550,17 +555,26 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
 		dscore = (score % 100) / 10;
 		uscore = score % 10;
 
-        XTft_Write(&TftInstance, 'S');
-        XTft_Write(&TftInstance, 'c');
-        XTft_Write(&TftInstance, 'o');
-        XTft_Write(&TftInstance, 'r');
-        XTft_Write(&TftInstance, 'e');
-
-        XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL + SCORE_TEXT_OFFSET, SCORE_CEIL + SCORE_TEXT_OFFSET);
+        screenWrite("Score", 5);
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET, SCORE_CEIL + STATUS_TEXT_OFFSET);
 
 		XTft_Write(&TftInstance, intToChar(hscore));
 		XTft_Write(&TftInstance, intToChar(dscore));
 		XTft_Write(&TftInstance, intToChar(uscore));
+
+        //Draw LIVES area
+        for(j = LIVES_CEIL; j < LIVES_FLOOR; j++) {
+            for(i = STATUS_LEFT_WALL; i < STATUS_RIGHT_WALL; i++) {
+                XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
+            }
+        }
+
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET/4, LIVES_CEIL + STATUS_TEXT_OFFSET/4);
+        XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
+        screenWrite("Lives", 5);
+
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET, LIVES_CEIL + STATUS_TEXT_OFFSET);
+        XTft_Write(&TftInstance, intToChar(lives));
 
         break;
 
@@ -573,32 +587,31 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
 //GameOver method should display "Game Over" text and prompt the user to press a key to restart
 void gameOver(void){
     safePrint("Game over!\r\n");
-    XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2);
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 150, (CEIL + FLOOR)/2);
     XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
-    XTft_Write(&TftInstance, 'G');
-    XTft_Write(&TftInstance, 'a');
-    XTft_Write(&TftInstance, 'm');
-    XTft_Write(&TftInstance, 'e');
-    XTft_Write(&TftInstance, ' ');
-    XTft_Write(&TftInstance, 'O');
-    XTft_Write(&TftInstance, 'v');
-    XTft_Write(&TftInstance, 'e');
-    XTft_Write(&TftInstance, 'r');
-    XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2 + 20);
-    //XTft_Write(&TftInstance, "Press any key to restart");
+    screenWrite("Game Over", 9);
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 100, (CEIL + FLOOR)/2 + 20);
+    screenWrite("Press the middle button to restart", 34);
 }
 
 //TODO: implement win
 //Win method should display "Win" text and prompt the user to press a key to restart
 void gameWin(void){
     safePrint("Victory!\r\n");
-    XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2);
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 150, (CEIL + FLOOR)/2);
     XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
-    XTft_Write(&TftInstance, 'V');
-    XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2 + 20);
-    //XTft_Write(&TftInstance, "Press any key to restart");
+    screenWrite("Victory!", 8);
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 100, (CEIL + FLOOR)/2 + 20);
+    screenWrite("Press the middle button to restart", 34);
 }
 
 unsigned char intToChar(int n){
 	return (unsigned char)(n + 48);
+}
+
+void screenWrite(char* str, int size) {
+    int i;
+    for(i = 0; i < size; i++) {
+        XTft_Write(&TftInstance, str[i]);
+    }
 }
