@@ -67,6 +67,7 @@ static volatile unsigned int lives;
 static volatile unsigned int score;
 static volatile unsigned int last_drawn_lives;
 static volatile unsigned int last_drawn_score;
+static volatile unsigned int last_drawn_speed;
 static volatile unsigned int hasCollided;
 static volatile int nextScoreMilestone;
 static volatile int scoreMilestoneReached;

@@ -12,6 +12,12 @@
 #define STATUS_TEXT_OFFSET  20
 #define LIVES_FLOOR         162
 #define LIVES_CEIL          121
+#define BALLSPEED_FLOOR     223
+#define BALLSPEED_CEIL      182
+#define BRICKSLEFT_FLOOR    284
+#define BRICKSLEFT_CEIL     243
+#define PLAYTIME_FLOOR      345
+#define PLAYTIME_CEIL       304
 
 #define BACKGROUND_COLOR        0x00FFFFFF
 #define STATUSAREA_COLOR        0x007A7A7A

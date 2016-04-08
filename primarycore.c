@@ -322,10 +322,15 @@ void running(void){
         scoreMilestoneReached--;    //Do not decrease scoreMilestoneReached in the loop condition evaluation, as it should not be decreased unless it's positive.
     }
 
-    //Draw the status area
-    sem_post(&sem_drawStatusArea);
-    //Wait for the drawing operation to complete.
-    sem_wait(&sem_running);
+    //Only draw the status area if lives or score has been updated
+    if(last_drawn_lives != lives || last_drawn_score != score || last_drawn_speed != ball.s) {
+        sem_post(&sem_drawStatusArea);
+        last_drawn_lives = lives;
+        last_drawn_score = score;
+        last_drawn_speed = ball.s;
+        //Wait for the drawing operation to complete.
+        sem_wait(&sem_running);
+    }
 }
 
 inline void buildBallMessage(Ball* ball, unsigned int* message){
@@ -467,7 +472,7 @@ void* thread_drawStatusArea(void){
 void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
     int i, j;
     int x, y, c;
-    int hscore, dscore, uscore;
+    int hscore, dscore, uscore, hspeed, dspeed, uspeed;
     switch(msgType){
         case MSGQ_TYPE_BRICK:
         //FIXME: hardcoded indexes
@@ -576,6 +581,57 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
         XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET, LIVES_CEIL + STATUS_TEXT_OFFSET);
         XTft_Write(&TftInstance, intToChar(lives));
 
+        //Draw BALL SPEED area
+        for(j = BALLSPEED_CEIL; j < BALLSPEED_FLOOR; j++) {
+            for(i = STATUS_LEFT_WALL; i < STATUS_RIGHT_WALL; i++) {
+                XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
+            }
+        }
+
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET/4, BALLSPEED_CEIL + STATUS_TEXT_OFFSET/4);
+        XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
+        screenWrite("Ball speed", 10);
+
+        hspeed = ball.s / 100;
+		dspeed = (ball.s % 100) / 10;
+		uspeed = ball.s % 10;
+
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET, BALLSPEED_CEIL + STATUS_TEXT_OFFSET);
+        XTft_Write(&TftInstance, intToChar(hspeed));
+		XTft_Write(&TftInstance, intToChar(dspeed));
+		XTft_Write(&TftInstance, intToChar(uspeed));
+
+
+        //Draw BRICKS LEFT area
+        for(j = BRICKSLEFT_CEIL; j < BRICKSLEFT_FLOOR; j++) {
+            for(i = STATUS_LEFT_WALL; i < STATUS_RIGHT_WALL; i++) {
+                XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
+            }
+        }
+
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET/4, BRICKSLEFT_CEIL + STATUS_TEXT_OFFSET/4);
+        XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
+        screenWrite("Bricks left", 11);
+
+        //TODO: Add brick counter to be able to display this
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET, BRICKSLEFT_CEIL + STATUS_TEXT_OFFSET);
+        //XTft_Write(&TftInstance, intToChar(lives));
+        screenWrite("Todo", 4);
+
+        //Draw PLAYTIME area
+        for(j = PLAYTIME_CEIL; j < PLAYTIME_FLOOR; j++) {
+            for(i = STATUS_LEFT_WALL; i < STATUS_RIGHT_WALL; i++) {
+                XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
+            }
+        }
+
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET/4, PLAYTIME_CEIL + STATUS_TEXT_OFFSET/4);
+        XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
+        screenWrite("Game time", 9);
+
+        XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET, PLAYTIME_CEIL + STATUS_TEXT_OFFSET);
+        //XTft_Write(&TftInstance, intToChar(lives));
+        screenWrite("Todo", 4);
         break;
 
         default:
