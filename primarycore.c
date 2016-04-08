@@ -541,6 +541,14 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
                 XTft_SetPixel(&TftInstance, i, j, STATUSAREA_COLOR);
             }
         }
+        XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL, SCORE_CEIL);
+        XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
+
+        //FIXME: Need correct offset between score text and score value
+        XTft_Write(&TftInstance,'Score');
+        XTft_SetPosChar(&TftInstance, SCORE_LEFT_WALL, SCORE_CEIL + SCORE_TEXT_OFFSET);
+        XTft_Write(&TftInstance, score);
+
         break;
 
         default:
@@ -552,10 +560,20 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
 //GameOver method should display "Game Over" text and prompt the user to press a key to restart
 void gameOver(void){
     safePrint("Game over!\r\n");
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2);
+    XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
+    XTft_Write(&TftInstance, 'Game Over');
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2 + 20);
+    XTft_Write(&TftInstance, 'Press any key to restart');
 }
 
 //TODO: implement win
 //Win method should display "Win" text and prompt the user to press a key to restart
 void gameWin(void){
     safePrint("Victory!\r\n");
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2);
+    XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
+    XTft_Write(&TftInstance, 'Victory');
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 50, (CEIL + FLOOR)/2 + 20);
+    XTft_Write(&TftInstance, 'Press any key to restart');
 }
