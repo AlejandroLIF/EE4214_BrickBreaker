@@ -5,11 +5,13 @@
 #define LEFT_WALL 			59
 #define FLOOR 				420
 #define CEIL 				60
-#define SCORE_RIGHT_WALL	629
-#define SCORE_LEFT_WALL		534
+#define STATUS_RIGHT_WALL	629
+#define STATUS_LEFT_WALL	534
 #define SCORE_FLOOR			101
 #define SCORE_CEIL			60
-#define SCORE_TEXT_OFFSET   20
+#define STATUS_TEXT_OFFSET  20
+#define LIVES_FLOOR         162
+#define LIVES_CEIL          121
 
 #define BACKGROUND_COLOR        0x00FFFFFF
 #define STATUSAREA_COLOR        0x007A7A7A
