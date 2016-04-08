@@ -10,6 +10,8 @@
 #include <sys/timer.h>
 #include <sys/intr.h>
 #include "semaphore.h"
+#include "xtmrctr_l.h"
+#include "xtmrctr.h"
 
 #include "xtftConfig.h"
 #include "xmutexConfig.h"
@@ -30,6 +32,9 @@
 #define BRICK_SCORE_NORMAL  1
 #define BRICK_SCORE_GOLDEN  2
 #define SCORE_MILESTONE     10
+#define TICKS_PER_MS		25000
+#define PERIOD_TICKS        TICKS_PER_MS*33
+#define FPS_TIMER_NUMBER	0
 
 typedef enum{
     MSGQ_MSGSIZE_BALL =             3 * sizeof(int),
@@ -58,8 +63,6 @@ static volatile int buttonInput,
                     barMovementCode,
                     brickUpdateComplete;
 
-extern unsigned int cyclesElapsed;
-
 //Main game component (Ball and Bar) declarations.
 extern Bar bar;
 extern Ball ball;
@@ -68,6 +71,9 @@ static volatile unsigned int score;
 static volatile unsigned int hasCollided;
 static volatile int nextScoreMilestone;
 static volatile int scoreMilestoneReached;
+static unsigned int ticks_before,
+                    ticks_diff;
+static XTmrCtr xTmrCtr;
 
 static XTft TftInstance;
 

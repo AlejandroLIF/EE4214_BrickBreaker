@@ -3,6 +3,8 @@
 XGpio gpPB; //PB device instance.
 Bar bar = {0, FLOOR - 10 - 3};
 Ball ball;
+soft_tmr_t timer_FPS;
+
 unsigned int cyclesElapsed;
 
 static void gpPBIntHandler(void *arg)
@@ -43,6 +45,14 @@ int main(void){
 //Xilkernel entry point
 int main_prog(void){
     int status;
+    /* BEGIN TIMER INITIALIZATION */
+    //Initialize FPSTimer
+    XTmrCtr_Initialize(&xTmrCtr, XPAR_AXI_TIMER_0_DEVICE_ID);
+    XTmrCtr_SetOptions(&xTmrCtr, FPS_TIMER_NUMBER, XTC_DOWN_COUNT_OPTION);
+    XTmrCtr_SetResetValue(&xTmrCtr, FPS_TIMER_NUMBER, PERIOD_TICKS);
+
+    /* END TIMER INITIALIZATION */
+
     /*BEGIN MAILBOX INITIALIZATION*/
     XMbox_Config *ConfigPtr;
     ConfigPtr = XMbox_LookupConfig(MBOX_DEVICE_ID);
@@ -276,6 +286,7 @@ void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
 }
 
 void running(void){
+	XTmrCtr_Start(&xTmrCtr, FPS_TIMER_NUMBER);
     int drawGameAreaBackground = 1;
     int dataBuffer[1];
     //Erase the bar
@@ -321,6 +332,17 @@ void running(void){
     sem_post(&sem_drawStatusArea);
     //Wait for the drawing operation to complete.
     sem_wait(&sem_running);
+
+    //Lock framerate to specified FPS
+    if(!XTmrCtr_IsExpired(&xTmrCtr, FPS_TIMER_NUMBER)){
+    	ticks_diff = XTmrCtr_GetValue(&xTmrCtr, FPS_TIMER_NUMBER);
+    	sys_sleep(ticks_diff);
+    }
+//    ticks_diff = sys_xget_clock_ticks();
+//    ticks_diff = PERIOD_TICKS - (ticks_diff - ticks_before);
+//    if((ticks_diff&0x7FFFFFFF) > 0){
+//    	sys_sleep(ticks_diff);
+//    }
 }
 
 inline void buildBallMessage(Ball* ball, unsigned int* message){
