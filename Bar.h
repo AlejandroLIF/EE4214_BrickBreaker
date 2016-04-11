@@ -13,7 +13,7 @@
 #define S_REGION_COLOR 0x000000ff
 #define N_REGION_COLOR 0x00000000
 
-#define JUMP_SPEED  25  //This is the rate of positional change in terms of pixels per jump
+#define JUMP_SPEED  100  //This is the rate of positional change in terms of pixels per jump
 #define MOVE_SPEED  5 //TODO: adjust this metric to pixels per second, depending on the desired framerate
 #define BAR_Y		405
 

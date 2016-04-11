@@ -30,6 +30,21 @@ static void gpPBIntHandler(void *arg)
     if(buttonInput & BUTTON_CENTER){
         paused = !paused;
     }
+
+    if(gameCycles - lastInterrupt < DEBOUNCE_CYCLES) return;
+    if(buttonInput){
+        lastInterrupt = gameCycles;
+    }
+    else{
+        if(gameCycles - lastInterrupt < JUMP_CYCLE_THRESHOLD){
+            if(barMovementCode == BAR_MOVE_LEFT){
+                barMovementCode = BAR_JUMP_LEFT;
+            }
+            else if(barMovementCode == BAR_MOVE_RIGHT){
+                barMovementCode = BAR_JUMP_RIGHT;
+            }
+        }
+    }
 }
 
 //Firmware entry point
@@ -173,9 +188,6 @@ void* thread_mainLoop(void){
                     safePrint("pc: run\r\n");
                     running();
                 }
-                //                else{
-                //                    //Paused
-                //                }
             }
 
             //Lost Life
@@ -209,6 +221,8 @@ void welcome(void){
     scoreMilestoneReached = 0;
     score = 0;
     win = FALSE;
+    gameCycles = 0;
+    lastInterrupt = 0;
 
     queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
     // ball = Ball_default; //FIXME: restore Ball_default
@@ -256,20 +270,35 @@ void welcome(void){
 }
 
 void ready(void){
+	unsigned int dataBuffer[3];
     //Erase the bar
     bar.c = GAMEAREA_COLOR;
-    queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
+    dataBuffer[0] = bar.x;
+    dataBuffer[1] = bar.y;
+    dataBuffer[2] = bar.c;
+    queueMsg(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR);
     bar.c = COLOR_NONE;
     //Erase the ball
     ball.c = GAMEAREA_COLOR;
-    queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
-    ball.c = COLOR_NONE;
+    dataBuffer[0] = ball.x;
+    dataBuffer[1] = ball.y;
+    dataBuffer[2] = ball.c;
+    queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
 
     updateBar(&bar, barMovementCode);
+    //FIXME: hacky implementation of "jump" functionality requires manual reset
+    if(barMovementCode == BAR_JUMP_LEFT || barMovementCode == BAR_JUMP_RIGHT){
+        barMovementCode = BAR_NO_MOVEMENT;
+    }
     followBar(&ball, &bar);
-    //FIXME: clear previous bar and ball before redrawing.
-    queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
-    queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
+    dataBuffer[0] = bar.x;
+    dataBuffer[1] = bar.y;
+    dataBuffer[2] = bar.c;
+    queueMsg(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR);
+    dataBuffer[0] = ball.x;
+    dataBuffer[1] = ball.y;
+    dataBuffer[2] = ball.c;
+    queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
 }
 
 void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
@@ -306,10 +335,20 @@ void running(void){
     sem_post(&sem_drawGameArea);
 
     updateBar(&bar, barMovementCode);
+    //FIXME: hacky implementation of "jump" functionality requires manual reset
+    if(barMovementCode == BAR_JUMP_LEFT || barMovementCode == BAR_JUMP_RIGHT){
+        barMovementCode = BAR_NO_MOVEMENT;
+    }
+
     updateBallPosition(&ball);
-    queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
-    queueMsg(MSGQ_TYPE_BALL, &ball, MSGQ_MSGSIZE_BALL);
-    //queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
+    dataBuffer[0] = bar.x;
+    dataBuffer[1] = bar.y;
+    dataBuffer[2] = bar.c;
+    queueMsg(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR);
+    dataBuffer[0] = ball.x;
+    dataBuffer[1] = ball.y;
+    dataBuffer[2] = ball.c;
+    queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
 
     //Check collision with walls
     updateBallDirection(&ball, checkCollideWall(&ball));
@@ -355,8 +394,9 @@ void running(void){
     }
 
     if(ticks_diff < PERIOD_TICKS){				//If we have time to spare
-        sys_sleep(PERIOD_TICKS - ticks_diff);
+        sleep(PERIOD_TICKS - ticks_diff);
     }
+    gameCycles++;
 }
 
 //Receives messagequeue messages
@@ -654,7 +694,15 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
 
         XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET, PLAYTIME_CEIL + STATUS_TEXT_OFFSET);
         //XTft_Write(&TftInstance, intToChar(lives));
-        screenWrite("Todo", 4);
+        //FIXME: the game time should be drawn at least every second.
+        //FIXME: fix hard-coded FPS
+        hspeed = (gameCycles/50) / 100;
+		dspeed = ((gameCycles/50) % 100) / 10;
+		uspeed = (gameCycles/50) % 10;
+		XTft_Write(&TftInstance, intToChar(hspeed));
+		XTft_Write(&TftInstance, intToChar(dspeed));
+		XTft_Write(&TftInstance, intToChar(uspeed));
+
         break;
 
         default:

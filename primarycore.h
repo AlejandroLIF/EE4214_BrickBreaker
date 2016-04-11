@@ -31,6 +31,8 @@
 #define BRICK_SCORE_GOLDEN  2
 #define SCORE_MILESTONE     10
 #define PERIOD_TICKS        20
+#define JUMP_CYCLE_THRESHOLD 1000
+#define DEBOUNCE_CYCLES		4
 
 typedef enum{
     MSGQ_MSGSIZE_BALL =             3 * sizeof(int),
@@ -70,6 +72,8 @@ static volatile unsigned int last_drawn_speed;
 static volatile unsigned int hasCollided;
 static volatile int nextScoreMilestone;
 static volatile int scoreMilestoneReached;
+static volatile unsigned int lastInterrupt;
+static volatile unsigned int gameCycles;
 static time_t ticks_before,
                     ticks_diff;
 
