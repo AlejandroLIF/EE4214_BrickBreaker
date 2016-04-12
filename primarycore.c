@@ -194,7 +194,14 @@ void* thread_mainLoop(void){
             if(loseLife){
                 loseLife = FALSE;
                 lives--;
+                while(!(buttonInput & BUTTON_CENTER)); //while(!continue)
+                eraseBar(&bar);
+                eraseBall(&ball);
+                sem_post(&sem_drawGameArea);
                 resetBallAndBar();
+                drawBar(&bar);
+                drawBall(&ball);
+                sem_post(&sem_drawGameArea);
                 paused = TRUE; //FIXME: this allows the player to recover from losing a ball. Player should actually jump to "running"
             }
         }
@@ -260,21 +267,42 @@ void welcome(void){
     //TODO: draw welcome text
 }
 
-void ready(void){
+void eraseBar(Bar* bar){
 	unsigned int dataBuffer[3];
-    //Erase the bar
-    bar.c = GAMEAREA_COLOR;
-    dataBuffer[0] = bar.x;
-    dataBuffer[1] = bar.y;
-    dataBuffer[2] = bar.c;
+    dataBuffer[0] = bar->x;
+    dataBuffer[1] = bar->y;
+    dataBuffer[2] = GAMEAREA_COLOR;
     queueMsg(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR);
-    bar.c = COLOR_NONE;
-    //Erase the ball
-    ball.c = GAMEAREA_COLOR;
-    dataBuffer[0] = ball.x;
-    dataBuffer[1] = ball.y;
-    dataBuffer[2] = ball.c;
+}
+
+void eraseBall(Ball* ball){
+	unsigned int dataBuffer[3];
+    dataBuffer[0] = ball->x;
+    dataBuffer[1] = ball->y;
+    dataBuffer[2] = GAMEAREA_COLOR;
     queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
+}
+
+void drawBar(Bar* bar){
+	unsigned int dataBuffer[3];
+    dataBuffer[0] = bar->x;
+    dataBuffer[1] = bar->y;
+    dataBuffer[2] = bar->c;
+    queueMsg(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR);
+}
+
+void drawBall(Ball* ball){
+	unsigned int dataBuffer[3];
+    dataBuffer[0] = ball->x;
+    dataBuffer[1] = ball->y;
+    dataBuffer[2] = ball->c;
+    queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
+}
+
+void ready(void){
+	eraseBar(&bar);
+	eraseBall(&ball);
+	sem_post(&sem_drawGameArea);
 
     updateBar(&bar, barMovementCode);
     //FIXME: hacky implementation of "jump" functionality requires manual reset
@@ -282,14 +310,9 @@ void ready(void){
         barMovementCode = BAR_NO_MOVEMENT;
     }
     followBar(&ball, &bar);
-    dataBuffer[0] = bar.x;
-    dataBuffer[1] = bar.y;
-    dataBuffer[2] = bar.c;
-    queueMsg(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR);
-    dataBuffer[0] = ball.x;
-    dataBuffer[1] = ball.y;
-    dataBuffer[2] = ball.c;
-    queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
+    drawBar(&bar);
+    drawBall(&ball);
+    sem_post(&sem_drawGameArea);
 }
 
 void resetBallAndBar(void){
@@ -323,22 +346,9 @@ void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){
 
 void running(void){
     ticks_before = xget_clock_ticks();
-    int drawGameAreaBackground = 1;
     int dataBuffer[5];
-    //Erase the bar
-    bar.c = GAMEAREA_COLOR;
-    dataBuffer[0] = bar.x;
-    dataBuffer[1] = bar.y;
-    dataBuffer[2] = bar.c;
-    queueMsg(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR);
-    bar.c = COLOR_NONE;
-    //Erase the ball
-    ball.c = GAMEAREA_COLOR;
-    dataBuffer[0] = ball.x;
-    dataBuffer[1] = ball.y;
-    dataBuffer[2] = ball.c;
-    queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
-    ball.c = COLOR_NONE;
+    eraseBar(&bar);
+    eraseBall(&ball);
     sem_post(&sem_drawGameArea);
 
     updateBar(&bar, barMovementCode);
@@ -348,14 +358,8 @@ void running(void){
     }
 
     updateBallPosition(&ball);
-    dataBuffer[0] = bar.x;
-    dataBuffer[1] = bar.y;
-    dataBuffer[2] = bar.c;
-    queueMsg(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR);
-    dataBuffer[0] = ball.x;
-    dataBuffer[1] = ball.y;
-    dataBuffer[2] = ball.c;
-    queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
+    drawBar(&bar);
+    drawBall(&ball);
 
     //Check collision with walls
     CollisionCode wallCollision = checkCollideWall(&ball);
@@ -667,9 +671,9 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
         XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
         screenWrite("Ball speed", 10);
 
-        hspeed = ball.s / 100;
-        dspeed = (ball.s % 100) / 10;
-        uspeed = ball.s % 10;
+        hspeed = (ball.s*FPS) / 100;
+        dspeed = ((ball.s*FPS) % 100) / 10;
+        uspeed = (ball.s*FPS) % 10;
 
         XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET, BALLSPEED_CEIL + STATUS_TEXT_OFFSET);
         XTft_Write(&TftInstance, intToChar(hspeed));
@@ -708,9 +712,9 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
         //XTft_Write(&TftInstance, intToChar(lives));
         //FIXME: the game time should be drawn at least every second.
         //FIXME: fix hard-coded FPS
-        hspeed = (gameCycles/50) / 100;
-		dspeed = ((gameCycles/50) % 100) / 10;
-		uspeed = (gameCycles/50) % 10;
+        hspeed = (gameCycles/FPS) / 100;
+		dspeed = ((gameCycles/FPS) % 100) / 10;
+		uspeed = (gameCycles/FPS) % 10;
 		XTft_Write(&TftInstance, intToChar(hspeed));
 		XTft_Write(&TftInstance, intToChar(dspeed));
 		XTft_Write(&TftInstance, intToChar(uspeed));

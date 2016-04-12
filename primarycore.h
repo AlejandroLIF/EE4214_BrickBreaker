@@ -30,7 +30,9 @@
 #define BRICK_SCORE_NORMAL  1
 #define BRICK_SCORE_GOLDEN  2
 #define SCORE_MILESTONE     10
-#define PERIOD_TICKS        20
+#define FPS					50
+#define	CLK_PERIOD_MS		1
+#define PERIOD_TICKS        1000/FPS
 #define JUMP_CYCLE_THRESHOLD 1000
 #define DEBOUNCE_CYCLES		4
 
@@ -113,6 +115,10 @@ static sem_t sem_running,
  unsigned char intToChar(int n);
  void screenWrite(char* str, int size);
  void resetBallAndBar(void);
+ void eraseBar(Bar* bar);
+ void eraseBall(Ball* ball);
+ void drawBar(Bar* bar);
+ void drawBall(Ball* ball);
 
 //Firmware entry point
 int main(void);
