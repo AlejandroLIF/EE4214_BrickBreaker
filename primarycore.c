@@ -256,7 +256,7 @@ void welcome(void){
     sem_wait(&sem_running);
     //If a score milestone was reached, update ball speed and golden columns
     while(scoreMilestoneReached){
-        updateBallSpeed(&ball, BALL_SPEED_SCORE_INCREASE);              //Update the ball's speed
+       updateBallSpeed(&ball, BALL_SPEED_SCORE_INCREASE);              //Update the ball's speed
         dataBuffer[0] = MBOX_MSG_UPDATE_GOLDEN;                         //Update golden bricks.
         XMbox_WriteBlocking(&mailbox, (u32*) dataBuffer, MBOX_MSG_UPDATE_GOLDEN_SIZE);
         XMbox_WriteBlocking(&mailbox, (u32*) dataBuffer, MBOX_MSG_UPDATE_GOLDEN_SIZE);
@@ -287,8 +287,8 @@ void eraseBar(Bar* bar){
 
 void eraseBall(Ball* ball){
 	unsigned int dataBuffer[3];
-    dataBuffer[0] = ball->x;
-    dataBuffer[1] = ball->y;
+    dataBuffer[0] = (unsigned int)ball->x;
+    dataBuffer[1] = (unsigned int)ball->y;
     dataBuffer[2] = GAMEAREA_COLOR;
     queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
 }
@@ -303,8 +303,8 @@ void drawBar(Bar* bar){
 
 void drawBall(Ball* ball){
 	unsigned int dataBuffer[3];
-    dataBuffer[0] = ball->x;
-    dataBuffer[1] = ball->y;
+    dataBuffer[0] = (unsigned int)ball->x;
+    dataBuffer[1] = (unsigned int)ball->y;
     dataBuffer[2] = ball->c;
     queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
 }
@@ -612,7 +612,7 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
         for(j = 0; j < DIAMETER; j++) {
             for (i = 0; i < DIAMETER; i++) {
                 if(BALL_MASK[j][i] == 0xFFFFFFFF) {
-                    XTft_SetPixel(&TftInstance, x - DIAMETER/2 + i, y - DIAMETER/2 + j, c ? c : BALL_COLOR);
+                    XTft_SetPixel(&TftInstance, ((unsigned int)x) - DIAMETER/2 + i, ((unsigned int)y) - DIAMETER/2 + j, c ? c : BALL_COLOR);
                 }
             }
         }

@@ -14,7 +14,7 @@
 #define N_REGION_COLOR 0x00000000
 
 #define JUMP_SPEED  100  //This is the rate of positional change in terms of pixels per jump
-#define MOVE_SPEED  5 //TODO: adjust this metric to pixels per second, depending on the desired framerate
+#define MOVE_SPEED  4 //TODO: adjust this metric to pixels per second, depending on the desired framerate
 #define BAR_Y		405
 
 struct Bar_s{

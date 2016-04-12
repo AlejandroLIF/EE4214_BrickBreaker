@@ -64,7 +64,7 @@ CollisionCode checkCollideWall(Ball* ball) {
 		return COLLIDE_WALL_CEIL;
 	}
 
-	if(ball->y >= FLOOR - DIAMETER/2) {
+	if(ball->y >= FLOOR - DIAMETER/2 - 1) {
 		return COLLIDE_WALL_FLOOR;
 	}
 	return COLLIDE_NONE;
