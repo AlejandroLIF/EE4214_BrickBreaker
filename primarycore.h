@@ -43,7 +43,8 @@ typedef enum{
     MSGQ_MSGSIZE_BACKGROUND =       1 * sizeof(int),
     MSGQ_MSGSIZE_BRICK_COLLISION =  2 * sizeof(int),
     MSGQ_MSGSIZE_GAMEAREA =         1 * sizeof(int),
-    MSGQ_MSGSIZE_STATUSAREA =       1 * sizeof(int)
+    MSGQ_MSGSIZE_STATUSAREA =       1 * sizeof(int),
+    MSGQ_MSGSIZE_DRAWTIME =         1 * sizeof(int)
 } MSGQ_MSGSIZE;
 
 typedef enum{
@@ -53,7 +54,8 @@ typedef enum{
     MSGQ_TYPE_BRICK_COLLISION,
     MSGQ_TYPE_BACKGROUND,
     MSGQ_TYPE_GAMEAREA,
-    MSGQ_TYPE_STATUSAREA
+    MSGQ_TYPE_STATUSAREA,
+    MSGQ_TYPE_DRAWTIME
 } MSGQ_TYPE;
 
 static volatile int buttonInput,
