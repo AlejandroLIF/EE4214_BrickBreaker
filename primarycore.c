@@ -693,7 +693,7 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
         //XTft_Write(&TftInstance, intToChar(lives));
         screenWrite("Todo", 4);
 
-        case MSGQ_TYPE_DRAWTIME
+        case MSGQ_TYPE_DRAWTIME:
         //Draw PLAYTIME area
         for(j = PLAYTIME_CEIL; j < PLAYTIME_FLOOR; j++) {
             for(i = STATUS_LEFT_WALL; i < STATUS_RIGHT_WALL; i++) {
