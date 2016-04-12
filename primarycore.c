@@ -194,14 +194,18 @@ void* thread_mainLoop(void){
             if(loseLife){
                 loseLife = FALSE;
                 lives--;
-                while(!(buttonInput & BUTTON_CENTER)); //while(!continue)
                 eraseBar(&bar);
                 eraseBall(&ball);
                 sem_post(&sem_drawGameArea);
+                sem_post(&sem_drawStatusArea);
+                sleep(50);
+                while(!(buttonInput & BUTTON_CENTER)); //while(!continue)
+
                 resetBallAndBar();
                 drawBar(&bar);
                 drawBall(&ball);
                 sem_post(&sem_drawGameArea);
+                sleep(400);
                 paused = TRUE; //FIXME: this allows the player to recover from losing a ball. Player should actually jump to "running"
             }
         }
