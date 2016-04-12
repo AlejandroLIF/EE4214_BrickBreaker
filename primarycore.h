@@ -110,6 +110,7 @@ static sem_t sem_running,
  void gameOver(void);
  void gameWin(void);
  void lostLife(void);
+ void clearText(void);
  int readFromMessageQueue(const MSGQ_TYPE id, void* dataBuffer, const MSGQ_MSGSIZE size);
  void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType);
  void safePrint(const char *ptr);
