@@ -52,7 +52,7 @@ CollisionCode checkCollideBar(Ball* ball, Bar* bar) {
 }
 
 CollisionCode checkCollideWall(Ball* ball) {
-	if(ball->x >= RIGHT_WALL - DIAMETER/2 && (ball->d < 90 || ball->d > 270)) {
+	if(ball->x >= (RIGHT_WALL - DIAMETER/2 - 1) && (ball->d < 90 || ball->d > 270)) {
 		return COLLIDE_WALL_RIGHT;
 	}
 
