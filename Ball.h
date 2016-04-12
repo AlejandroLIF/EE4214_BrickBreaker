@@ -16,8 +16,8 @@
 #define BALL_SPEED_S_PLUS   2      //FIXME: these have to be adjusted to FPS
 
 struct Ball_s{
-    	unsigned int x; /*horizontal anchor*/
-    	unsigned int y; /*vertical anchor*/
+    	double x; /*horizontal anchor*/
+    	double y; /*vertical anchor*/
         unsigned int c; /*color*/
     	unsigned int d; /*direction*/
     	int s; /*speed*/            //XXX: speed is signed to prevent underflow when reducing speed below MIN_SPEED
