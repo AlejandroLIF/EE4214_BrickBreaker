@@ -461,12 +461,16 @@ void* thread_brickCollisionListener(void){
             //            safePrint("Brick collision!\r\n");
             //            safePrint(dataBuffer[0] + '0');
             //            if(!hasCollided){
-            updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
-            hasCollided = TRUE;
-            safePrint("pc: collide ");
-            temp = dataBuffer[0] + '0';
-            safePrint(&temp);
-            safePrint("\r\n");
+            if(dataBuffer[0] == COLLIDE_WALL_FLOOR){
+                loseLife = 1;
+            } else {
+                updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
+                hasCollided = TRUE;
+                safePrint("pc: collide ");
+                temp = dataBuffer[0] + '0';
+                safePrint(&temp);
+                safePrint("\r\n");
+            }
             //            }
         }
         // sem_post(&sem_running); //Signal the running thread that we're done.
