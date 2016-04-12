@@ -203,7 +203,7 @@ void* thread_mainLoop(void){
                 sem_wait(&sem_running);
                 sleep(50);
                 while(!(buttonInput & BUTTON_CENTER)); //while(!continue)
-
+                clearText();
                 resetBallAndBar();
                 drawBar(&bar);
                 drawBall(&ball);
@@ -765,6 +765,14 @@ void lifeLost(void) {
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 150, (CEIL + FLOOR)/2);
     XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
     screenWrite("Life Lost", 9);
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 100, (CEIL + FLOOR)/2 + 20);
+    screenWrite("Press the middle button to restart", 34);
+}
+
+void clearText(void) {
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 150, (CEIL + FLOOR)/2);
+    XTft_SetColor(&TftInstance, GAMEAREA_COLOR, GAMEAREA_COLOR);
+    screenWrite("CLEARING TEXT", 13);
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 100, (CEIL + FLOOR)/2 + 20);
     screenWrite("Press the middle button to restart", 34);
 }
