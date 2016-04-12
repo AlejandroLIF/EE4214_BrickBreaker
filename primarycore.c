@@ -194,6 +194,8 @@ void* thread_mainLoop(void){
             if(loseLife){
                 loseLife = FALSE;
                 lives--;
+                resetBallAndBar();
+                paused = TRUE; //FIXME: this allows the player to recover from losing a ball. Player should actually jump to "running"
             }
         }
         if(!lives){
@@ -213,7 +215,6 @@ void welcome(void){
     int drawGameAreaBackground = 1;
     unsigned int dataBuffer[5];
     lives = INITIAL_LIVES;
-    bar.x = (LEFT_WALL + RIGHT_WALL)/2;
     //FIXME: hacky fix with the bar.x1
     queueMsg(MSGQ_TYPE_GAMEAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_GAMEAREA);
     queueMsg(MSGQ_TYPE_STATUSAREA, &drawGameAreaBackground, MSGQ_MSGSIZE_STATUSAREA);
@@ -224,17 +225,7 @@ void welcome(void){
     gameCycles = 0;
     lastInterrupt = 0;
 
-    queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
-    // ball = Ball_default; //FIXME: restore Ball_default
-    ball.x = bar.x;
-    ball.y = BAR_Y - DIAMETER / 2;
-    ball.d = 340;
-    ball.s = 5;
-    ball.c = 0;
-    dataBuffer[0] = ball.x;
-    dataBuffer[1] = ball.y;
-    dataBuffer[2] = ball.c;
-    queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
+    resetBallAndBar();
 
     //Send a message to the secondary core, signaling a restart
     //The secondary core should reply with a draw message for every brick
@@ -299,6 +290,22 @@ void ready(void){
     dataBuffer[1] = ball.y;
     dataBuffer[2] = ball.c;
     queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
+}
+
+void resetBallAndBar(void){
+	unsigned int dataBuffer[3];
+	bar.x = (LEFT_WALL + RIGHT_WALL)/2;
+	queueMsg(MSGQ_TYPE_BAR, &bar, MSGQ_MSGSIZE_BAR);
+	// ball = Ball_default; //FIXME: restore Ball_default
+	ball.x = bar.x;
+	ball.y = BAR_Y - DIAMETER / 2;
+	ball.d = 340;
+	ball.s = 5;
+	ball.c = 0;
+	dataBuffer[0] = ball.x;
+	dataBuffer[1] = ball.y;
+	dataBuffer[2] = ball.c;
+	queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
 }
 
 void queueMsg(const MSGQ_TYPE msgType, void* data, const MSGQ_MSGSIZE size){

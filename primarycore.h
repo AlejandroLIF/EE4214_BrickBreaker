@@ -112,6 +112,7 @@ static sem_t sem_running,
  int increaseScore(int isGoldenBrick);
  unsigned char intToChar(int n);
  void screenWrite(char* str, int size);
+ void resetBallAndBar(void);
 
 //Firmware entry point
 int main(void);
