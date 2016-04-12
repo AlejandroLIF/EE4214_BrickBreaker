@@ -358,7 +358,12 @@ void running(void){
     queueMsg(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL);
 
     //Check collision with walls
-    updateBallDirection(&ball, checkCollideWall(&ball));
+    CollisionCode wallCollision = checkCollideWall(&ball);
+    if(wallCollision == COLLIDE_WALL_FLOOR) {
+        loseLife = 1;
+    } else {
+        updateBallDirection(&ball, checkCollideWall(&ball));
+    }
 
     //Check collision with bar
     updateBallDirection(&ball, checkCollideBar(&ball, &bar));
@@ -468,16 +473,12 @@ void* thread_brickCollisionListener(void){
             //            safePrint("Brick collision!\r\n");
             //            safePrint(dataBuffer[0] + '0');
             //            if(!hasCollided){
-            if(dataBuffer[0] == COLLIDE_WALL_FLOOR){
-                loseLife = 1;
-            } else {
-                updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
-                hasCollided = TRUE;
-                safePrint("pc: collide ");
-                temp = dataBuffer[0] + '0';
-                safePrint(&temp);
-                safePrint("\r\n");
-            }
+            updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
+            hasCollided = TRUE;
+            safePrint("pc: collide ");
+            temp = dataBuffer[0] + '0';
+            safePrint(&temp);
+            safePrint("\r\n");
             //            }
         }
         // sem_post(&sem_running); //Signal the running thread that we're done.
