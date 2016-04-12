@@ -9,7 +9,6 @@ unsigned int cyclesElapsed;
 static void gpPBIntHandler(void *arg)
 {
     //clear the interrupt flag. if this is not done, gpio will keep interrupting the microblaze.--
-    // --Possible to use (XGpio*)arg instead of &gpPB
     XGpio_InterruptClear(&gpPB,1);
     //Read the state of the push buttons.
     buttonInput = XGpio_DiscreteRead(&gpPB, 1);
@@ -26,23 +25,22 @@ static void gpPBIntHandler(void *arg)
     if(gameCycles - lastInterrupt < DEBOUNCE_CYCLES) return;
     if(buttonInput){
             lastInterrupt = gameCycles;
-            safePrint("Last Interrupt\r\n");
+//            safePrint("Last Interrupt\r\n");
         }
         else{
-        	safePrint("Interrupt else\r\n");
+//        	safePrint("Interrupt else\r\n");
             if(gameCycles - lastInterrupt < JUMP_CYCLE_THRESHOLD){
                 if(barMovementCode == BAR_MOVE_LEFT){
-                	safePrint("Bar jump left\r\n");
+//                	safePrint("Bar jump left\r\n");
                     barJumpCode = BAR_JUMP_LEFT;
                 }
                 else if(barMovementCode == BAR_MOVE_RIGHT){
-                	safePrint("Bar jump right\r\n");
+//                	safePrint("Bar jump right\r\n");
                     barJumpCode = BAR_JUMP_RIGHT;
                 }
             }
         }
 
-    //TODO: configure bar movement codes for "jump"
     switch(buttonInput){
         case BUTTON_LEFT:
         barMovementCode = BAR_MOVE_LEFT;
