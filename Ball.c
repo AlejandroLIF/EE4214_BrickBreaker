@@ -74,7 +74,7 @@ void updateBallPosition(Ball* ball){
 
     if(new_x > RIGHT_WALL - DIAMETER/2) {
     	new_x = RIGHT_WALL - DIAMETER/2;
-    } else if(new_x < LEFT_WALL + DIAMETER/2 + 1) {
+    } else if(new_x < LEFT_WALL + DIAMETER/2) {
     	new_x = LEFT_WALL + DIAMETER/2;
     }
 
