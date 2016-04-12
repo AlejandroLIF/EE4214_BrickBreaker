@@ -13,6 +13,31 @@ static void gpPBIntHandler(void *arg)
     XGpio_InterruptClear(&gpPB,1);
     //Read the state of the push buttons.
     buttonInput = XGpio_DiscreteRead(&gpPB, 1);
+
+
+    if(buttonInput & BUTTON_CENTER){
+        paused = !paused;
+    }
+
+    if(gameCycles - lastInterrupt < DEBOUNCE_CYCLES) return;
+    if(buttonInput){
+            lastInterrupt = gameCycles;
+            safePrint("Last Interrupt\r\n");
+        }
+        else{
+        	safePrint("Interrupt else\r\n");
+            if(gameCycles - lastInterrupt < JUMP_CYCLE_THRESHOLD){
+                if(barMovementCode == BAR_MOVE_LEFT){
+                	safePrint("Bar jump left\r\n");
+                    barJumpCode = BAR_JUMP_LEFT;
+                }
+                else if(barMovementCode == BAR_MOVE_RIGHT){
+                	safePrint("Bar jump right\r\n");
+                    barJumpCode = BAR_JUMP_RIGHT;
+                }
+            }
+        }
+
     //TODO: configure bar movement codes for "jump"
     switch(buttonInput){
         case BUTTON_LEFT:
@@ -26,24 +51,6 @@ static void gpPBIntHandler(void *arg)
         break;
         default: //No movement if more than one button is pressed at a time.
         barMovementCode = BAR_NO_MOVEMENT;
-    }
-    if(buttonInput & BUTTON_CENTER){
-        paused = !paused;
-    }
-
-    if(gameCycles - lastInterrupt < DEBOUNCE_CYCLES) return;
-    if(buttonInput){
-        lastInterrupt = gameCycles;
-    }
-    else{
-        if(gameCycles - lastInterrupt < JUMP_CYCLE_THRESHOLD){
-            if(barMovementCode == BAR_MOVE_LEFT){
-                barMovementCode = BAR_JUMP_LEFT;
-            }
-            else if(barMovementCode == BAR_MOVE_RIGHT){
-                barMovementCode = BAR_JUMP_RIGHT;
-            }
-        }
     }
 }
 
@@ -169,7 +176,6 @@ int main_prog(void){
 void* thread_mainLoop(void){
     while(TRUE){
         //Welcome
-        //safePrint("primarycore: Welcome\r\n");
         welcome();
         while(!(buttonInput & BUTTON_CENTER));//while(!start)
         sleep(1000); //FIXME: hardcoded delay
@@ -185,7 +191,6 @@ void* thread_mainLoop(void){
             //Running
             while(!win && !loseLife){
                 if(!paused){
-                    safePrint("pc: run\r\n");
                     running();
                 }
             }
@@ -314,11 +319,14 @@ void ready(void){
 	eraseBall(&ball);
 	sem_post(&sem_drawGameArea);
 
-    updateBar(&bar, barMovementCode);
-    //FIXME: hacky implementation of "jump" functionality requires manual reset
-    if(barMovementCode == BAR_JUMP_LEFT || barMovementCode == BAR_JUMP_RIGHT){
-        barMovementCode = BAR_NO_MOVEMENT;
-    }
+	if(barJumpCode){
+		updateBar(&bar, barJumpCode);
+		barJumpCode = BAR_NO_MOVEMENT;
+	}
+	else{
+		updateBar(&bar, barMovementCode);
+	}
+
     followBar(&ball, &bar);
     drawBar(&bar);
     drawBall(&ball);
@@ -361,10 +369,12 @@ void running(void){
     eraseBall(&ball);
     sem_post(&sem_drawGameArea);
 
-    updateBar(&bar, barMovementCode);
-    //FIXME: hacky implementation of "jump" functionality requires manual reset
-    if(barMovementCode == BAR_JUMP_LEFT || barMovementCode == BAR_JUMP_RIGHT){
-        barMovementCode = BAR_NO_MOVEMENT;
+    if(barJumpCode){
+    	updateBar(&bar, barJumpCode);
+    	barJumpCode = BAR_NO_MOVEMENT;
+    }
+    else{
+    	updateBar(&bar, barMovementCode);
     }
 
     updateBallPosition(&ball);
@@ -436,29 +446,17 @@ void* thread_drawGameArea(void){
     unsigned int dataBuffer[3];
     while(TRUE){
         sem_wait(&sem_drawGameArea); //Wait to be signaled
-        // while(readFromMessageQueue(MSGQ_TYPE_BACKGROUND, dataBuffer, MSGQ_MSGSIZE_BACKGROUND)){
-        //     safePrint("primarycore: drawBackground\r\n");
-        //     draw(dataBuffer, MSGQ_TYPE_BACKGROUND);
-        // }
         while(readFromMessageQueue(MSGQ_TYPE_GAMEAREA, dataBuffer, MSGQ_MSGSIZE_GAMEAREA)){
-            // safePrint("primarycore: drawBackground\r\n");
             draw(dataBuffer, MSGQ_TYPE_GAMEAREA);
-            safePrint("pc: dbg\r\n");
         }
         while(readFromMessageQueue(MSGQ_TYPE_BAR, dataBuffer, MSGQ_MSGSIZE_BAR)){
-            // safePrint("primarycore: drawBar\r\n");
             draw(dataBuffer, MSGQ_TYPE_BAR);
-            safePrint("pc: dbar\r\n");
         }
         while(readFromMessageQueue(MSGQ_TYPE_BALL, dataBuffer, MSGQ_MSGSIZE_BALL)){
-            // safePrint("primarycore: drawBall\r\n");
             draw(dataBuffer, MSGQ_TYPE_BALL);
-            safePrint("pc: dball\r\n");
         }
         while(readFromMessageQueue(MSGQ_TYPE_BRICK, dataBuffer, MSGQ_MSGSIZE_BRICK)){
-            // safePrint("primarycore: drawBrick\r\n");
             draw(dataBuffer, MSGQ_TYPE_BRICK);
-            safePrint("pc: dbrick\r\n");
         }
     }
 }
@@ -482,7 +480,6 @@ int readFromMessageQueue(const MSGQ_TYPE id, void* dataBuffer, const MSGQ_MSGSIZ
 //Receives messagequeue messages
 void* thread_brickCollisionListener(void){
     unsigned int dataBuffer[3];
-    unsigned char temp;
     while(TRUE){
         sem_wait(&sem_brickCollisionListener);
         //TODO: remove the while loop. no point in it :P
@@ -493,12 +490,7 @@ void* thread_brickCollisionListener(void){
             bricksLeft--;
             updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
             hasCollided = TRUE;
-            safePrint("pc: collide ");
-            temp = dataBuffer[0] + '0';
-            safePrint(&temp);
-            safePrint("\r\n");
         }
-        // sem_post(&sem_running); //Signal the running thread that we're done.
     }
 }
 
@@ -743,7 +735,6 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
 
 //GameOver method should display "Game Over" text and prompt the user to press a key to restart
 void gameOver(void){
-    safePrint("Game over!\r\n");
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 150, (CEIL + FLOOR)/2);
     XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
     screenWrite("Game Over", 9);
@@ -753,7 +744,6 @@ void gameOver(void){
 
 //Win method should display "Win" text and prompt the user to press a key to restart
 void gameWin(void){
-    safePrint("Victory!\r\n");
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 150, (CEIL + FLOOR)/2);
     XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
     screenWrite("Victory!", 8);

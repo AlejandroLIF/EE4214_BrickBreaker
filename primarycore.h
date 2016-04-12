@@ -33,8 +33,8 @@
 #define FPS					50
 #define	CLK_PERIOD_MS		1
 #define PERIOD_TICKS        (1000/FPS)
-#define JUMP_CYCLE_THRESHOLD 1000
-#define DEBOUNCE_CYCLES		4
+#define JUMP_CYCLE_THRESHOLD 10
+#define DEBOUNCE_CYCLES		2
 #define TOTAL_BRICKS		80
 
 typedef enum{
@@ -64,6 +64,7 @@ static volatile int buttonInput,
                     paused,
                     loseLife,
                     barMovementCode,
+                    barJumpCode,
                     brickUpdateComplete,
                     bricksLeft;
 
