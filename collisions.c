@@ -23,45 +23,48 @@ CollisionCode checkCollideBar(Ball* ball, Bar* bar) {
 	}
 
 	// Ball is now in range of collision, determine type
+    if(ball->d > 0 && ball->d < 180) {
+        if(ball->x < bar->x) {
+            if(ball->x < bar->x - N_REGION_WIDTH/2) {
+                if(ball->x < bar->x - N_REGION_WIDTH/2 - S_REGION_WIDTH) {
+                    return COLLIDE_BAR_AMINUS;
+                } else {
+                    return COLLIDE_BAR_SMINUS;
+                }
+            } else {
+                return COLLIDE_BAR_N;
+            }
 
-	if(ball->x < bar->x) {
-		if(ball->x < bar->x - N_REGION_WIDTH/2) {
-			if(ball->x < bar->x - N_REGION_WIDTH/2 - S_REGION_WIDTH) {
-				return COLLIDE_BAR_AMINUS;
-			} else {
-				return COLLIDE_BAR_SMINUS;
-			}
-		} else {
-			return COLLIDE_BAR_N;
-		}
-
-	} else {
-		if(ball->x > bar->x + N_REGION_WIDTH/2) {
-			if(ball->x > bar->x + N_REGION_WIDTH/2 + S_REGION_WIDTH) {
-				return COLLIDE_BAR_APLUS;
-			} else {
-				return COLLIDE_BAR_SPLUS;
-			}
-		} else {
-			return COLLIDE_BAR_N;
-		}
-	}
+        } else {
+            if(ball->x > bar->x + N_REGION_WIDTH/2) {
+                if(ball->x > bar->x + N_REGION_WIDTH/2 + S_REGION_WIDTH) {
+                    return COLLIDE_BAR_APLUS;
+                } else {
+                    return COLLIDE_BAR_SPLUS;
+                }
+            } else {
+                return COLLIDE_BAR_N;
+            }
+        }
+    } else {
+        return COLLIDE_NONE;
+    }
 }
 
 CollisionCode checkCollideWall(Ball* ball) {
-	if(ball->x >= RIGHT_WALL - DIAMETER/2) {
+	if(ball->x >= RIGHT_WALL - DIAMETER/2 && (ball->d < 90 || ball->d > 270)) {
 		return COLLIDE_WALL_RIGHT;
 	}
 
-	if(ball->x <= LEFT_WALL + DIAMETER/2) {
+	if(ball->x <= LEFT_WALL + DIAMETER/2 && (ball->d > 90 && ball->d < 270)) {
 		return COLLIDE_WALL_LEFT;
 	}
 
-	if(ball->y <= CEIL + DIAMETER/2) {
+	if(ball->y <= CEIL + DIAMETER/2 && (ball->d > 180 && ball->d < 360) && ball->d != 0) {
 		return COLLIDE_WALL_CEIL;
 	}
 
-	if(ball->y >= FLOOR - DIAMETER/2 - 1) {
+	if(ball->y >= FLOOR - DIAMETER/2) {
 		return COLLIDE_WALL_FLOOR;
 	}
 	return COLLIDE_NONE;
