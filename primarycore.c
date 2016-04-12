@@ -197,6 +197,7 @@ void* thread_mainLoop(void){
                 eraseBar(&bar);
                 eraseBall(&ball);
                 draw(0, MSGQ_TYPE_STATUSAREA);
+                lifeLost();
                 sem_post(&sem_drawGameArea);
                 sem_post(&sem_drawStatusArea);
                 sem_wait(&sem_running);
@@ -756,6 +757,14 @@ void gameWin(void){
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 150, (CEIL + FLOOR)/2);
     XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
     screenWrite("Victory!", 8);
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 100, (CEIL + FLOOR)/2 + 20);
+    screenWrite("Press the middle button to restart", 34);
+}
+
+void lifeLost(void) {
+    XTft_SetPosChar(&TftInstance, LEFT_WALL + 150, (CEIL + FLOOR)/2);
+    XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, GAMEAREA_COLOR);
+    screenWrite("Life Lost", 9);
     XTft_SetPosChar(&TftInstance, LEFT_WALL + 100, (CEIL + FLOOR)/2 + 20);
     screenWrite("Press the middle button to restart", 34);
 }
