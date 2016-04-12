@@ -19,6 +19,10 @@ static void gpPBIntHandler(void *arg)
         paused = !paused;
     }
 
+    if(buttonInput & BUTTON_UP){
+    	win = TRUE; //FIXME: THIS IS USED TO TEST SOFT-RESET FUNCTIONALITY
+    }
+
     if(gameCycles - lastInterrupt < DEBOUNCE_CYCLES) return;
     if(buttonInput){
             lastInterrupt = gameCycles;
@@ -45,9 +49,6 @@ static void gpPBIntHandler(void *arg)
         break;
         case BUTTON_RIGHT:
         barMovementCode = BAR_MOVE_RIGHT;
-        break;
-        case BUTTON_UP:
-        win = TRUE; //FIXME: THIS IS USED TO TEST SOFT-RESET FUNCTIONALITY
         break;
         default: //No movement if more than one button is pressed at a time.
         barMovementCode = BAR_NO_MOVEMENT;
@@ -322,6 +323,7 @@ void ready(void){
 	if(barJumpCode){
 		updateBar(&bar, barJumpCode);
 		barJumpCode = BAR_NO_MOVEMENT;
+		barMovementCode = BAR_NO_MOVEMENT;
 	}
 	else{
 		updateBar(&bar, barMovementCode);
@@ -372,6 +374,7 @@ void running(void){
     if(barJumpCode){
     	updateBar(&bar, barJumpCode);
     	barJumpCode = BAR_NO_MOVEMENT;
+    	barMovementCode = BAR_NO_MOVEMENT;
     }
     else{
     	updateBar(&bar, barMovementCode);
