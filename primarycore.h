@@ -32,9 +32,10 @@
 #define SCORE_MILESTONE     10
 #define FPS					50
 #define	CLK_PERIOD_MS		1
-#define PERIOD_TICKS        1000/FPS
+#define PERIOD_TICKS        (1000/FPS)
 #define JUMP_CYCLE_THRESHOLD 1000
 #define DEBOUNCE_CYCLES		4
+#define TOTAL_BRICKS		80
 
 typedef enum{
     MSGQ_MSGSIZE_BALL =             3 * sizeof(int),
@@ -63,7 +64,8 @@ static volatile int buttonInput,
                     paused,
                     loseLife,
                     barMovementCode,
-                    brickUpdateComplete;
+                    brickUpdateComplete,
+                    bricksLeft;
 
 //Main game component (Ball and Bar) declarations.
 extern Bar bar;

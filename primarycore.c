@@ -196,8 +196,10 @@ void* thread_mainLoop(void){
                 lives--;
                 eraseBar(&bar);
                 eraseBall(&ball);
+                draw(0, MSGQ_TYPE_STATUSAREA);
                 sem_post(&sem_drawGameArea);
                 sem_post(&sem_drawStatusArea);
+                sem_wait(&sem_running);
                 sleep(50);
                 while(!(buttonInput & BUTTON_CENTER)); //while(!continue)
 
@@ -235,6 +237,7 @@ void welcome(void){
     win = FALSE;
     gameCycles = 0;
     lastInterrupt = 0;
+    bricksLeft = TOTAL_BRICKS;
 
     resetBallAndBar();
 
@@ -261,9 +264,11 @@ void welcome(void){
 
     //Only draw the status area if lives or score has been updated
     if(last_drawn_lives != lives || last_drawn_score != score) {
-        sem_post(&sem_drawStatusArea);
+    	draw(0, MSGQ_TYPE_STATUSAREA);
         last_drawn_lives = lives;
         last_drawn_score = score;
+
+        sem_post(&sem_drawStatusArea);
         //Wait for the drawing operation to complete.
         sem_wait(&sem_running);
     }
@@ -396,10 +401,11 @@ void running(void){
 
     //Only draw the status area if lives or score has been updated
     if(last_drawn_lives != lives || last_drawn_score != score || last_drawn_speed != ball.s) {
-        sem_post(&sem_drawStatusArea);
+    	draw(0, MSGQ_TYPE_STATUSAREA);
         last_drawn_lives = lives;
         last_drawn_score = score;
         last_drawn_speed = ball.s;
+        sem_post(&sem_drawStatusArea);
         //Wait for the drawing operation to complete.
         sem_wait(&sem_running);
     }
@@ -417,6 +423,11 @@ void running(void){
         sleep(PERIOD_TICKS - ticks_diff);
     }
     gameCycles++;
+    if(gameCycles % PERIOD_TICKS == 0){
+    	draw(0, MSGQ_TYPE_DRAWTIME);
+    	sem_post(&sem_drawStatusArea);
+    	sem_wait(&sem_running);
+    }
 }
 
 //Receives messagequeue messages
@@ -478,16 +489,13 @@ void* thread_brickCollisionListener(void){
             if(increaseScore(dataBuffer[1])){ //FIXME: magic numbers when interpreting the data buffer
                 scoreMilestoneReached++;
             }
-            //            safePrint("Brick collision!\r\n");
-            //            safePrint(dataBuffer[0] + '0');
-            //            if(!hasCollided){
+            bricksLeft--;
             updateBallDirection(&ball, dataBuffer[0]); //TODO: implement method. dataBuffer[0] should be a CollisionCodeType
             hasCollided = TRUE;
             safePrint("pc: collide ");
             temp = dataBuffer[0] + '0';
             safePrint(&temp);
             safePrint("\r\n");
-            //            }
         }
         // sem_post(&sem_running); //Signal the running thread that we're done.
     }
@@ -546,7 +554,6 @@ void* thread_mailboxListener(void){
 void* thread_drawStatusArea(void){
     while(TRUE){
         sem_wait(&sem_drawStatusArea);
-        draw(0, MSGQ_TYPE_STATUSAREA);
         sem_post(&sem_running); //Signal the running thread that we're done.
     }
 }
@@ -696,10 +703,12 @@ void draw(unsigned int* dataBuffer, const MSGQ_TYPE msgType){
         XTft_SetColor(&TftInstance, STATUSAREA_SCORE_COLOR, STATUSAREA_COLOR);
         screenWrite("Bricks left", 11);
 
-        //TODO: Add brick counter to be able to display this
         XTft_SetPosChar(&TftInstance, STATUS_LEFT_WALL + STATUS_TEXT_OFFSET, BRICKSLEFT_CEIL + STATUS_TEXT_OFFSET);
-        //XTft_Write(&TftInstance, intToChar(lives));
-        screenWrite("Todo", 4);
+        //FIXME: variable recycling to draw the remaining bricks
+		dspeed = (bricksLeft % 100) / 10;
+		uspeed = bricksLeft % 10;
+		XTft_Write(&TftInstance, intToChar(dspeed));
+		XTft_Write(&TftInstance, intToChar(uspeed));
 
         case MSGQ_TYPE_DRAWTIME:
         //Draw PLAYTIME area
