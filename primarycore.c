@@ -371,7 +371,7 @@ void running(void){
     if(wallCollision == COLLIDE_WALL_FLOOR) {
         loseLife = 1;
     } else {
-        updateBallDirection(&ball, checkCollideWall(&ball));
+        updateBallDirection(&ball, wallCollision);
     }
 
     //Check collision with bar
